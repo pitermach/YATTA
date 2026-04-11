@@ -33,3 +33,4 @@ All keyboard shortcuts for the addon should be contained in a separate layer, ac
 
 The addon will be stored in a git repository which you can initialize, so commit any changes you make, but don't push them yet.
 
+The addon should enforce a minimum NVDA version of 2024.1 to leverage the `speech.speechCanceled` extension point for robust speech cancellation.

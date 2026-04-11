@@ -6,6 +6,7 @@ import ui as nvda_ui
 import speech
 import queueHandler
 import threading
+import logHandler
 from . import ui
 from . import cache
 from .services.google import GoogleTranslate
@@ -44,6 +45,19 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         self.speaking_translation = False
         self._original_speak = speechModule.speak
         speechModule.speak = self._hook_speak
+
+        self._translation_cancel_events = set()
+        
+        self._trigger_translation_cancel_func = self._trigger_translation_cancel
+
+        self._trigger_translation_cancel_func = self._trigger_translation_cancel
+
+        try:
+            speechModule.speechCanceled.register(self._hook_cancelSpeech)
+            logHandler.log.debug("ultimateTranslate: Registered speech.speechCanceled extension point")
+        except Exception as e:
+            logHandler.log.warning(f"ultimateTranslate: Failed to register speech.speechCanceled: {e}")
+            
         self.last_spoken_text = ""
 
     def terminate(self):
@@ -54,6 +68,11 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         except Exception:
             pass
         speechModule.speak = self._original_speak
+        
+        try:
+            speechModule.speechCanceled.unregister(self._hook_cancelSpeech)
+        except Exception as e:
+            logHandler.log.warning(f"ultimateTranslate: Failed to unregister speech.speechCanceled: {e}")
 
     def get_engine(self):
         conf = config.conf["ultimateTranslate"]
@@ -71,6 +90,12 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         if not text or not text.strip():
             return
             
+        stripped = text.strip()
+        if len(stripped) <= 1:
+            return
+        if stripped.isdigit():
+            return
+
         app = ""
         try:
             obj = api.getForegroundObject()
@@ -86,9 +111,17 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         
         cached = cache.get_translation(app, target_lang, text)
         
+        request_cancel_event = threading.Event()
+        self._translation_cancel_events.add(request_cancel_event)
+
         def speak_chunk(chunk):
+            logHandler.log.debug(f"ultimateTranslate speak_chunk evaluating: {chunk!r}, canceled: {request_cancel_event.is_set()}")
+            if request_cancel_event.is_set():
+                logHandler.log.debug("ultimateTranslate speak_chunk canceled, returning.")
+                return
             self.speaking_translation = True
             try:
+                logHandler.log.debug(f"ultimateTranslate calling nvda_ui.message for: {chunk!r}")
                 nvda_ui.message(chunk)
             finally:
                 self.speaking_translation = False
@@ -98,46 +131,65 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                 speak_chunk(cached)
             if copy:
                 api.copyToClip(cached)
+            self._translation_cancel_events.discard(request_cancel_event)
             return
-            
+
         def do_translate():
-            engine = self.get_engine()
+            logHandler.log.debug(f"ultimateTranslate do_translate started for text: {text!r}")
             try:
-                res = engine.translate(text, source_lang, target_lang, stream=stream_ollama)
-                if isinstance(res, str):
-                    cache.set_translation(app, target_lang, text, res)
-                    if speak:
-                        queueHandler.queueFunction(queueHandler.eventQueue, speak_chunk, res)
-                    if copy:
-                        api.copyToClip(res)
-                else:
-                    full_text = []
-                    sentence_buffer = []
-                    
-                    def emit_buffer():
-                        if sentence_buffer:
-                            msg = "".join(sentence_buffer).strip()
-                            if msg:
-                                queueHandler.queueFunction(queueHandler.eventQueue, speak_chunk, msg)
-                            sentence_buffer.clear()
-
-                    for chunk in res:
-                        full_text.append(chunk)
+                engine = self.get_engine()
+                try:
+                    res = engine.translate(text, source_lang, target_lang, stream=stream_ollama)
+                    if isinstance(res, str):
+                        if request_cancel_event.is_set():
+                            return
+                        cache.set_translation(app, target_lang, text, res)
                         if speak:
-                            sentence_buffer.append(chunk)
-                            if any(c in chunk for c in ['.', '?', '!', '。', '？', '！', '\n']):
-                                emit_buffer()
-                    
-                    if speak:
-                        emit_buffer()
-                    
-                    final_text = "".join(full_text)
-                    cache.set_translation(app, target_lang, text, final_text)
-                    if copy:
-                        api.copyToClip(final_text)
+                            queueHandler.queueFunction(queueHandler.eventQueue, speak_chunk, res)
+                        if copy:
+                            api.copyToClip(res)
+                    else:
+                        full_text = []
+                        sentence_buffer = []
+                        
+                        def emit_buffer():
+                            if sentence_buffer:
+                                msg = "".join(sentence_buffer).strip()
+                                logHandler.log.debug(f"ultimateTranslate emit_buffer called with msg: {msg!r}")
+                                if msg:
+                                    queueHandler.queueFunction(queueHandler.eventQueue, speak_chunk, msg)
+                                sentence_buffer.clear()
 
-            except Exception as e:
-                queueHandler.queueFunction(queueHandler.eventQueue, speak_chunk, f"Error: {e}")
+                        logHandler.log.debug("ultimateTranslate entering streaming chunk loop")
+                        for chunk in res:
+                            logHandler.log.debug(f"ultimateTranslate yielded chunk: {chunk!r}")
+                            if request_cancel_event.is_set():
+                                logHandler.log.debug("ultimateTranslate chunk loop break: cancel event is set")
+                                try:
+                                    res.close()
+                                except Exception:
+                                    pass
+                                break
+                            full_text.append(chunk)
+                            if speak:
+                                sentence_buffer.append(chunk)
+                                if any(c in chunk for c in ['.', '?', '!', '。', '？', '！', '\n']):
+                                    emit_buffer()
+                        
+                        if speak:
+                            emit_buffer()
+                        
+                        final_text = "".join(full_text)
+                        if not request_cancel_event.is_set():
+                            cache.set_translation(app, target_lang, text, final_text)
+                            if copy:
+                                api.copyToClip(final_text)
+
+                except Exception as e:
+                    if not request_cancel_event.is_set():
+                        queueHandler.queueFunction(queueHandler.eventQueue, speak_chunk, f"Error: {e}")
+            finally:
+                self._translation_cancel_events.discard(request_cancel_event)
 
         threading.Thread(target=do_translate).start()
 
@@ -154,6 +206,16 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                 self.translate_text(text, speak=True, copy=False)
                 return
         self._original_speak(speechSequence, *args, **kwargs)
+
+    def _trigger_translation_cancel(self):
+        logHandler.log.debug("ultimateTranslate: _trigger_translation_cancel called")
+        for ev in list(self._translation_cancel_events):
+            ev.set()
+        self._translation_cancel_events.clear()
+
+    def _hook_cancelSpeech(self, *args, **kwargs):
+        logHandler.log.debug("ultimateTranslate: _hook_cancelSpeech triggered")
+        self._trigger_translation_cancel()
 
     def bindGestures(self, gestures):
         super().bindGestures(gestures)
