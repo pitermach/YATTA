@@ -13,6 +13,11 @@ from .services.bing import BingTranslate
 from .services.deepl import DeepLTranslate
 from .services.ollama import OllamaTranslate
 
+try:
+    from speech import speech as speechModule
+except ImportError:
+    speechModule = speech
+
 confspec = {
     "service": "string(default='google')",
     "source_lang": "string(default='auto')",
@@ -36,8 +41,9 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         import gui
         gui.settingsDialogs.NVDASettingsDialog.categoryClasses.append(ui.UltimateTranslateSettingsPanel)
         
-        self._original_speak = speech.speak
-        speech.speak = self._hook_speak
+        self.speaking_translation = False
+        self._original_speak = speechModule.speak
+        speechModule.speak = self._hook_speak
         self.last_spoken_text = ""
 
     def terminate(self):
@@ -47,7 +53,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             gui.settingsDialogs.NVDASettingsDialog.categoryClasses.remove(ui.UltimateTranslateSettingsPanel)
         except Exception:
             pass
-        speech.speak = self._original_speak
+        speechModule.speak = self._original_speak
 
     def get_engine(self):
         conf = config.conf["ultimateTranslate"]
@@ -79,9 +85,17 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         stream_ollama = conf.get("ollama_stream", True) and conf["service"] == "ollama"
         
         cached = cache.get_translation(app, target_lang, text)
+        
+        def speak_chunk(chunk):
+            self.speaking_translation = True
+            try:
+                nvda_ui.message(chunk)
+            finally:
+                self.speaking_translation = False
+
         if cached:
             if speak:
-                nvda_ui.message(cached)
+                speak_chunk(cached)
             if copy:
                 api.copyToClip(cached)
             return
@@ -93,7 +107,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                 if isinstance(res, str):
                     cache.set_translation(app, target_lang, text, res)
                     if speak:
-                        queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.message, res)
+                        queueHandler.queueFunction(queueHandler.eventQueue, speak_chunk, res)
                     if copy:
                         api.copyToClip(res)
                 else:
@@ -104,7 +118,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                         if sentence_buffer:
                             msg = "".join(sentence_buffer).strip()
                             if msg:
-                                queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.message, msg)
+                                queueHandler.queueFunction(queueHandler.eventQueue, speak_chunk, msg)
                             sentence_buffer.clear()
 
                     for chunk in res:
@@ -123,11 +137,15 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                         api.copyToClip(final_text)
 
             except Exception as e:
-                queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.message, f"Error: {e}")
+                queueHandler.queueFunction(queueHandler.eventQueue, speak_chunk, f"Error: {e}")
 
         threading.Thread(target=do_translate).start()
 
     def _hook_speak(self, speechSequence, *args, **kwargs):
+        if self.speaking_translation:
+            self._original_speak(speechSequence, *args, **kwargs)
+            return
+
         texts = [x for x in speechSequence if isinstance(x, str)]
         if texts:
             text = " ".join(texts)
