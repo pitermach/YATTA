@@ -98,10 +98,24 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                         api.copyToClip(res)
                 else:
                     full_text = []
+                    sentence_buffer = []
+                    
+                    def emit_buffer():
+                        if sentence_buffer:
+                            msg = "".join(sentence_buffer).strip()
+                            if msg:
+                                queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.message, msg)
+                            sentence_buffer.clear()
+
                     for chunk in res:
                         full_text.append(chunk)
                         if speak:
-                             queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.message, chunk)
+                            sentence_buffer.append(chunk)
+                            if any(c in chunk for c in ['.', '?', '!', '。', '？', '！', '\n']):
+                                emit_buffer()
+                    
+                    if speak:
+                        emit_buffer()
                     
                     final_text = "".join(full_text)
                     cache.set_translation(app, target_lang, text, final_text)

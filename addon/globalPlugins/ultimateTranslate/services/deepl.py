@@ -12,7 +12,7 @@ class DeepLTranslate(TranslationEngine):
         if not api_key:
             error_msg = "DeepL API key not configured."
             if stream:
-                yield error_msg
+                return iter([error_msg])
             return error_msg
             
         is_free_api = api_key.endswith(":fx")
@@ -42,11 +42,11 @@ class DeepLTranslate(TranslationEngine):
                 result = json.loads(response.read().decode('utf-8'))
                 translated_text = result["translations"][0]["text"]
                 if stream:
-                    yield translated_text
+                    return iter([translated_text])
                 else:
                     return translated_text
         except Exception as e:
             error_msg = f"DeepL Translate error: {str(e)}"
             if stream:
-                yield error_msg
+                return iter([error_msg])
             return error_msg
