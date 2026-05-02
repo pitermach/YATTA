@@ -29,10 +29,10 @@ confspec = {
     "ollama_system_prompt": "string(default='You are an expert translator. Translate the given text to the target language.')",
     "ollama_stream": "boolean(default=True)"
 }
-config.conf.spec["ultimateTranslate"] = confspec
+config.conf.spec["YATA"] = confspec
 
 class GlobalPlugin(globalPluginHandler.GlobalPlugin):
-    scriptCategory = "Ultimate Translate"
+    scriptCategory = "YATA"
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -40,7 +40,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         cache.init()
         self.auto_translate = False
         import gui
-        gui.settingsDialogs.NVDASettingsDialog.categoryClasses.append(ui.UltimateTranslateSettingsPanel)
+        gui.settingsDialogs.NVDASettingsDialog.categoryClasses.append(ui.YATASettingsPanel)
         
         self.speaking_translation = False
         self._original_speak = speechModule.speak
@@ -54,9 +54,9 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
         try:
             speechModule.speechCanceled.register(self._hook_cancelSpeech)
-            logHandler.log.debug("ultimateTranslate: Registered speech.speechCanceled extension point")
+            logHandler.log.debug("YATA: Registered speech.speechCanceled extension point")
         except Exception as e:
-            logHandler.log.warning(f"ultimateTranslate: Failed to register speech.speechCanceled: {e}")
+            logHandler.log.warning(f"YATA: Failed to register speech.speechCanceled: {e}")
             
         self.last_spoken_text = ""
 
@@ -64,7 +64,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         cache.save()
         import gui
         try:
-            gui.settingsDialogs.NVDASettingsDialog.categoryClasses.remove(ui.UltimateTranslateSettingsPanel)
+            gui.settingsDialogs.NVDASettingsDialog.categoryClasses.remove(ui.YATASettingsPanel)
         except Exception:
             pass
         speechModule.speak = self._original_speak
@@ -72,10 +72,10 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         try:
             speechModule.speechCanceled.unregister(self._hook_cancelSpeech)
         except Exception as e:
-            logHandler.log.warning(f"ultimateTranslate: Failed to unregister speech.speechCanceled: {e}")
+            logHandler.log.warning(f"YATA: Failed to unregister speech.speechCanceled: {e}")
 
     def get_engine(self):
-        conf = config.conf["ultimateTranslate"]
+        conf = config.conf["YATA"]
         service = conf["service"]
         if service == "bing":
             return BingTranslate(conf.copy())
@@ -104,7 +104,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         except Exception:
             pass
 
-        conf = config.conf["ultimateTranslate"]
+        conf = config.conf["YATA"]
         target_lang = conf["target_lang"]
         source_lang = conf["source_lang"]
         stream_ollama = conf.get("ollama_stream", True) and conf["service"] == "ollama"
@@ -115,13 +115,13 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         self._translation_cancel_events.add(request_cancel_event)
 
         def speak_chunk(chunk):
-            logHandler.log.debug(f"ultimateTranslate speak_chunk evaluating: {chunk!r}, canceled: {request_cancel_event.is_set()}")
+            logHandler.log.debug(f"YATA speak_chunk evaluating: {chunk!r}, canceled: {request_cancel_event.is_set()}")
             if request_cancel_event.is_set():
-                logHandler.log.debug("ultimateTranslate speak_chunk canceled, returning.")
+                logHandler.log.debug("YATA speak_chunk canceled, returning.")
                 return
             self.speaking_translation = True
             try:
-                logHandler.log.debug(f"ultimateTranslate calling nvda_ui.message for: {chunk!r}")
+                logHandler.log.debug(f"YATA calling nvda_ui.message for: {chunk!r}")
                 nvda_ui.message(chunk)
             finally:
                 self.speaking_translation = False
@@ -135,7 +135,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             return
 
         def do_translate():
-            logHandler.log.debug(f"ultimateTranslate do_translate started for text: {text!r}")
+            logHandler.log.debug(f"YATA do_translate started for text: {text!r}")
             try:
                 engine = self.get_engine()
                 try:
@@ -155,16 +155,16 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                         def emit_buffer():
                             if sentence_buffer:
                                 msg = "".join(sentence_buffer).strip()
-                                logHandler.log.debug(f"ultimateTranslate emit_buffer called with msg: {msg!r}")
+                                logHandler.log.debug(f"YATA emit_buffer called with msg: {msg!r}")
                                 if msg:
                                     queueHandler.queueFunction(queueHandler.eventQueue, speak_chunk, msg)
                                 sentence_buffer.clear()
 
-                        logHandler.log.debug("ultimateTranslate entering streaming chunk loop")
+                        logHandler.log.debug("YATA entering streaming chunk loop")
                         for chunk in res:
-                            logHandler.log.debug(f"ultimateTranslate yielded chunk: {chunk!r}")
+                            logHandler.log.debug(f"YATA yielded chunk: {chunk!r}")
                             if request_cancel_event.is_set():
-                                logHandler.log.debug("ultimateTranslate chunk loop break: cancel event is set")
+                                logHandler.log.debug("YATA chunk loop break: cancel event is set")
                                 try:
                                     res.close()
                                 except Exception:
@@ -208,13 +208,13 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         self._original_speak(speechSequence, *args, **kwargs)
 
     def _trigger_translation_cancel(self):
-        logHandler.log.debug("ultimateTranslate: _trigger_translation_cancel called")
+        logHandler.log.debug("YATA: _trigger_translation_cancel called")
         for ev in list(self._translation_cancel_events):
             ev.set()
         self._translation_cancel_events.clear()
 
     def _hook_cancelSpeech(self, *args, **kwargs):
-        logHandler.log.debug("ultimateTranslate: _hook_cancelSpeech triggered")
+        logHandler.log.debug("YATA: _hook_cancelSpeech triggered")
         self._trigger_translation_cancel()
 
     def bindGestures(self, gestures):
@@ -283,8 +283,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
     @scriptHandler.script(description="Toggle auto translate")
     def script_toggleAuto(self, gesture):
+        nvda_ui.message("Auto translate off" if self.auto_translate else "Auto translate on")
         self.auto_translate = not self.auto_translate
-        nvda_ui.message("Auto translate on" if self.auto_translate else "Auto translate off")
 
     __layerGestures = {
         "kb:s": "translateSelection",

@@ -3,7 +3,7 @@ import gui
 from gui.settingsDialogs import SettingsPanel
 import config
 
-class UltimateTranslateSettingsPanel(SettingsPanel):
+class YATASettingsPanel(SettingsPanel):
     title = "Ultimate Translate"
     
     def makeSettings(self, settingsSizer):
@@ -12,7 +12,7 @@ class UltimateTranslateSettingsPanel(SettingsPanel):
         self.serviceList = ["google", "bing", "deepl", "ollama"]
         self.serviceNames = ["Google Translate (Free)", "Bing Translate (Free)", "DeepL", "Ollama"]
         
-        conf = config.conf["ultimateTranslate"]
+        conf = config.conf["YATA"]
         
         # Service Selection
         self.serviceChoice = sHelper.addLabeledControl("Translation Service:", wx.Choice, choices=self.serviceNames)
@@ -67,7 +67,7 @@ class UltimateTranslateSettingsPanel(SettingsPanel):
         self.Layout()
 
     def onSave(self):
-        conf = config.conf["ultimateTranslate"]
+        conf = config.conf["YATA"]
         conf["service"] = self.serviceList[self.serviceChoice.GetSelection()]
         conf["source_lang"] = self.sourceLang.GetValue()
         conf["target_lang"] = self.targetLang.GetValue()

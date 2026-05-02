@@ -9,7 +9,7 @@ _cache_file = ""
 
 def init():
     global _cache_file, _cache
-    _cache_file = os.path.join(globalVars.appArgs.configPath, "ultimateTranslate_cache.json")
+    _cache_file = os.path.join(globalVars.appArgs.configPath, "YATA_cache.json")
     if os.path.exists(_cache_file):
         try:
             with open(_cache_file, "r", encoding="utf-8") as f:
