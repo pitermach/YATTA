@@ -28,7 +28,18 @@ confspec = {
     "ollama_model": "string(default='gemma:2b')",
     "ollama_system_prompt": "string(default='You are an expert translator. Translate the given text to the target language.')",
     "ollama_user_prompt": "string(default='{TEXT}')",
-    "ollama_stream": "boolean(default=True)"
+    "ollama_stream": "boolean(default=True)",
+    "openai_key": "string(default='')",
+    "openai_address": "string(default='https://api.openai.com/v1')",
+    "openai_model": "string(default='gpt-4o-mini')",
+    "openai_system_prompt": "string(default='You are an expert translator. Translate the given text to the target language.')",
+    "openai_user_prompt": "string(default='{TEXT}')",
+    "openai_stream": "boolean(default=True)",
+    "gemini_key": "string(default='')",
+    "gemini_model": "string(default='gemini-2.5-flash')",
+    "gemini_system_prompt": "string(default='You are an expert translator. Translate the given text to the target language.')",
+    "gemini_user_prompt": "string(default='{TEXT}')",
+    "gemini_stream": "boolean(default=True)"
 }
 config.conf.spec["YATA"] = confspec
 
@@ -83,7 +94,14 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         elif service == "deepl":
             return DeepLTranslate(conf.copy())
         elif service == "ollama":
+            from .services.ollama import OllamaTranslate
             return OllamaTranslate(conf.copy())
+        elif service == "openai":
+            from .services.openai import OpenAITranslate
+            return OpenAITranslate(conf.copy())
+        elif service == "gemini":
+            from .services.gemini import GeminiTranslate
+            return GeminiTranslate(conf.copy())
         else:
             return GoogleTranslate(conf.copy())
 
@@ -109,7 +127,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         conf = config.conf["YATA"]
         target_lang = conf["target_lang"]
         source_lang = conf["source_lang"]
-        stream_ollama = conf.get("ollama_stream", True) and conf["service"] == "ollama"
+        service = conf["service"]
+        stream_ollama = conf.get(f"{service}_stream", True) and service in ("ollama", "openai", "gemini")
         
         cached = cache.get_translation(app, target_lang, text)
         

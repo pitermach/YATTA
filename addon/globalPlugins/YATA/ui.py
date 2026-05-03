@@ -9,8 +9,8 @@ class YATASettingsPanel(SettingsPanel):
     def makeSettings(self, settingsSizer):
         sHelper = gui.guiHelper.BoxSizerHelper(self, sizer=settingsSizer)
         
-        self.serviceList = ["google", "bing", "deepl", "ollama"]
-        self.serviceNames = ["Google Translate (Free)", "Bing Translate (Free)", "DeepL", "Ollama"]
+        self.serviceList = ["google", "bing", "deepl", "ollama", "openai", "gemini"]
+        self.serviceNames = ["Google Translate (Free)", "Bing Translate (Free)", "DeepL", "Ollama", "OpenAI", "Google Gemini"]
         
         conf = config.conf["YATA"]
         
@@ -43,44 +43,72 @@ class YATASettingsPanel(SettingsPanel):
         self.deeplPanel.SetSizer(deeplSizer)
         sHelper.addItem(self.deeplPanel)
         
-        # Ollama settings
-        self.ollamaPanel = wx.Panel(self)
-        ollamaSizer = wx.BoxSizer(wx.VERTICAL)
-        ollamaHelper = gui.guiHelper.BoxSizerHelper(self.ollamaPanel, sizer=ollamaSizer)
-        self.ollamaAddress = ollamaHelper.addLabeledControl("Ollama Address:", wx.TextCtrl, value=conf.get("ollama_address", "http://localhost:11434"))
+        # LLM settings
+        self.llmPanel = wx.Panel(self)
+        llmSizer = wx.BoxSizer(wx.VERTICAL)
+        llmHelper = gui.guiHelper.BoxSizerHelper(self.llmPanel, sizer=llmSizer)
         
-        self.ollamaModel = ollamaHelper.addLabeledControl("Ollama Model:", wx.TextCtrl, value=conf.get("ollama_model", "gemma:2b"))
-        self.btnSelectModel = wx.Button(self.ollamaPanel, label="Select Model...")
+        self.llmKey = llmHelper.addLabeledControl("API Key:", wx.TextCtrl, value="")
+        self.llmAddress = llmHelper.addLabeledControl("Address / Base URL:", wx.TextCtrl, value="")
+        self.llmModel = llmHelper.addLabeledControl("Model:", wx.TextCtrl, value="")
+        self.btnSelectModel = wx.Button(self.llmPanel, label="Select Model...")
         self.btnSelectModel.Bind(wx.EVT_BUTTON, self.onSelectModel)
-        ollamaHelper.addItem(self.btnSelectModel)
+        llmHelper.addItem(self.btnSelectModel)
         
-        self.ollamaPrompt = ollamaHelper.addLabeledControl("Ollama System Prompt:", wx.TextCtrl, style=wx.TE_MULTILINE, value=conf.get("ollama_system_prompt", "You are an expert translator. Translate the given text to the target language."))
-        self.ollamaUserPrompt = ollamaHelper.addLabeledControl("Ollama User Prompt:", wx.TextCtrl, style=wx.TE_MULTILINE, value=conf.get("ollama_user_prompt", "{TEXT}"))
-        self.btnLoadDefaultPrompt = wx.Button(self.ollamaPanel, label="Load Default Prompts")
+        self.llmPrompt = llmHelper.addLabeledControl("System Prompt:", wx.TextCtrl, style=wx.TE_MULTILINE, value="")
+        self.llmUserPrompt = llmHelper.addLabeledControl("User Prompt:", wx.TextCtrl, style=wx.TE_MULTILINE, value="")
+        self.btnLoadDefaultPrompt = wx.Button(self.llmPanel, label="Load Default Prompts")
         self.btnLoadDefaultPrompt.Bind(wx.EVT_BUTTON, self.onLoadDefaultPrompt)
-        ollamaHelper.addItem(self.btnLoadDefaultPrompt)
+        llmHelper.addItem(self.btnLoadDefaultPrompt)
         
-        self.ollamaStream = ollamaHelper.addItem(wx.CheckBox(self.ollamaPanel, label="Stream responses"))
-        self.ollamaStream.SetValue(conf.get("ollama_stream", True))
-        self.ollamaPanel.SetSizer(ollamaSizer)
-        sHelper.addItem(self.ollamaPanel)
+        self.llmStream = llmHelper.addItem(wx.CheckBox(self.llmPanel, label="Stream responses"))
+        self.llmPanel.SetSizer(llmSizer)
+        sHelper.addItem(self.llmPanel)
+        
+        self._current_service = current_service
+        self._loadLLMConfig(self._current_service)
         
         self.updateVisibility()
 
     def onServiceChange(self, evt):
+        self._saveLLMConfig(self._current_service)
+        self._current_service = self.serviceList[self.serviceChoice.GetSelection()]
+        self._loadLLMConfig(self._current_service)
         self.updateVisibility()
+        
+    def _saveLLMConfig(self, service):
+        if service not in ("ollama", "openai", "gemini"): return
+        conf = config.conf["YATA"]
+        if service != "ollama": conf[f"{service}_key"] = self.llmKey.GetValue()
+        if service in ("ollama", "openai"): conf[f"{service}_address"] = self.llmAddress.GetValue()
+        conf[f"{service}_model"] = self.llmModel.GetValue()
+        conf[f"{service}_system_prompt"] = self.llmPrompt.GetValue()
+        conf[f"{service}_user_prompt"] = self.llmUserPrompt.GetValue()
+        conf[f"{service}_stream"] = self.llmStream.GetValue()
+
+    def _loadLLMConfig(self, service):
+        if service not in ("ollama", "openai", "gemini"): return
+        conf = config.conf["YATA"]
+        self.llmKey.SetValue(conf.get(f"{service}_key", ""))
+        self.llmAddress.SetValue(conf.get(f"{service}_address", ""))
+        self.llmModel.SetValue(conf.get(f"{service}_model", ""))
+        self.llmPrompt.SetValue(conf.get(f"{service}_system_prompt", ""))
+        self.llmUserPrompt.SetValue(conf.get(f"{service}_user_prompt", ""))
+        self.llmStream.SetValue(conf.get(f"{service}_stream", True))
         
     def updateVisibility(self):
         sel = self.serviceList[self.serviceChoice.GetSelection()]
         if sel == "deepl":
             self.deeplPanel.Show()
-            self.ollamaPanel.Hide()
-        elif sel == "ollama":
+            self.llmPanel.Hide()
+        elif sel in ("ollama", "openai", "gemini"):
             self.deeplPanel.Hide()
-            self.ollamaPanel.Show()
+            self.llmPanel.Show()
+            self.llmKey.Enable(sel != "ollama")
+            self.llmAddress.Enable(sel != "gemini")
         else:
             self.deeplPanel.Hide()
-            self.ollamaPanel.Hide()
+            self.llmPanel.Hide()
         self.Layout()
 
     def onSave(self):
@@ -89,11 +117,7 @@ class YATASettingsPanel(SettingsPanel):
         conf["source_lang"] = self.sourceLang.GetValue()
         conf["target_lang"] = self.targetLang.GetValue()
         conf["deepl_key"] = self.deeplKey.GetValue()
-        conf["ollama_address"] = self.ollamaAddress.GetValue()
-        conf["ollama_model"] = self.ollamaModel.GetValue()
-        conf["ollama_system_prompt"] = self.ollamaPrompt.GetValue()
-        conf["ollama_user_prompt"] = self.ollamaUserPrompt.GetValue()
-        conf["ollama_stream"] = self.ollamaStream.GetValue()
+        self._saveLLMConfig(self._current_service)
 
     def onSelectLanguage(self, txtCtrl):
         import core
@@ -101,7 +125,7 @@ class YATASettingsPanel(SettingsPanel):
         
         conf_copy = config.conf["YATA"].copy()
         conf_copy["deepl_key"] = self.deeplKey.GetValue()
-        conf_copy["ollama_model"] = self.ollamaModel.GetValue()
+        self._saveLLMConfig(self._current_service)
         
         engine = None
         if sel == "bing":
@@ -113,6 +137,12 @@ class YATASettingsPanel(SettingsPanel):
         elif sel == "ollama":
             from .services.ollama import OllamaTranslate
             engine = OllamaTranslate(conf_copy)
+        elif sel == "openai":
+            from .services.openai import OpenAITranslate
+            engine = OpenAITranslate(conf_copy)
+        elif sel == "gemini":
+            from .services.gemini import GeminiTranslate
+            engine = GeminiTranslate(conf_copy)
         else:
             from .services.google import GoogleTranslate
             engine = GoogleTranslate(conf_copy)
@@ -138,13 +168,31 @@ class YATASettingsPanel(SettingsPanel):
     def onSelectModel(self, evt):
         import urllib.request
         import json
-        address = self.ollamaAddress.GetValue().rstrip("/")
-        url = f"{address}/api/tags"
+        sel = self._current_service
+        models = []
         try:
-            req = urllib.request.Request(url)
-            with urllib.request.urlopen(req, timeout=5) as response:
-                res = json.loads(response.read().decode('utf-8'))
-                models = [m['name'] for m in res.get('models', [])]
+            if sel == "ollama":
+                address = self.llmAddress.GetValue().rstrip("/")
+                url = f"{address}/api/tags"
+                req = urllib.request.Request(url)
+                with urllib.request.urlopen(req, timeout=5) as response:
+                    res = json.loads(response.read().decode('utf-8'))
+                    models = [m['name'] for m in res.get('models', [])]
+            elif sel == "openai":
+                key = self.llmKey.GetValue().strip()
+                address = self.llmAddress.GetValue().rstrip("/")
+                url = f"{address}/models"
+                req = urllib.request.Request(url, headers={"Authorization": f"Bearer {key}"})
+                with urllib.request.urlopen(req, timeout=5) as response:
+                    res = json.loads(response.read().decode('utf-8'))
+                    models = [m['id'] for m in res.get('data', [])]
+            elif sel == "gemini":
+                key = self.llmKey.GetValue().strip()
+                url = f"https://generativelanguage.googleapis.com/v1beta/models?key={key}"
+                req = urllib.request.Request(url)
+                with urllib.request.urlopen(req, timeout=5) as response:
+                    res = json.loads(response.read().decode('utf-8'))
+                    models = [m['name'].split('/')[-1] for m in res.get('models', []) if 'generateContent' in m.get('supportedGenerationMethods', [])]
         except Exception as e:
             import ui
             ui.message(f"Failed to fetch models: {e}")
@@ -155,15 +203,15 @@ class YATASettingsPanel(SettingsPanel):
             ui.message("No models found.")
             return
             
-        dlg = wx.SingleChoiceDialog(self, "Select Model:", "Ollama Models", models)
+        dlg = wx.SingleChoiceDialog(self, "Select Model:", f"{sel.capitalize()} Models", models)
         if dlg.ShowModal() == wx.ID_OK:
-            self.ollamaModel.SetValue(dlg.GetStringSelection())
+            self.llmModel.SetValue(dlg.GetStringSelection())
         dlg.Destroy()
 
     def onLoadDefaultPrompt(self, evt):
         import os
         import json
-        model = self.ollamaModel.GetValue()
+        model = self.llmModel.GetValue()
         addon_dir = os.path.dirname(__file__)
         prompts_file = os.path.join(addon_dir, "prompts.json")
         try:
@@ -173,8 +221,8 @@ class YATASettingsPanel(SettingsPanel):
             for k in prompts:
                 if k.lower() in model.lower():
                     entry = prompts[k]
-                    self.ollamaPrompt.SetValue(entry.get("system_prompt", ""))
-                    self.ollamaUserPrompt.SetValue(entry.get("user_prompt", ""))
+                    self.llmPrompt.SetValue(entry.get("system_prompt", ""))
+                    self.llmUserPrompt.SetValue(entry.get("user_prompt", ""))
                     import ui
                     ui.message("Default prompt loaded.")
                     return
