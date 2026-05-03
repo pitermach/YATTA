@@ -19,7 +19,7 @@ class OllamaTranslate(TranslationEngine):
                     if chunk.get('done', False):
                         break
         except Exception as e:
-            yield f"Ollama Translate error: {str(e)}"
+            raise Exception(f"Ollama Translate error: {str(e)}")
 
     def translate(self, text: str, source_lang: str = "auto", target_lang: str = "en", stream: bool = False):
         address = self.config.get("ollama_address", "http://localhost:11434").rstrip("/")
