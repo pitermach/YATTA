@@ -8,7 +8,7 @@ class DeepLTranslate(TranslationEngine):
     has_api_key = True
 
     def get_supported_languages(self) -> dict:
-        api_key = self.config.get("api_key", "").strip()
+        api_key = self.config.get("deepl_key", "").strip()
         default_langs = {"en": "English", "es": "Spanish", "fr": "French", "de": "German", "ja": "Japanese", "zh": "Chinese"}
         if not api_key:
             return default_langs
@@ -29,7 +29,7 @@ class DeepLTranslate(TranslationEngine):
             return default_langs
 
     def translate(self, text: str, source_lang: str = "auto", target_lang: str = "en", stream: bool = False):
-        api_key = self.config.get("api_key", "").strip()
+        api_key = self.config.get("deepl_key", "").strip()
         if not api_key:
             raise Exception("DeepL API key not configured.")
             
