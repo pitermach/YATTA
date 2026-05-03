@@ -19,3 +19,9 @@ class TranslationEngine:
         If stream is True, returns an iterator yielding chunks of string as they arrive.
         """
         raise NotImplementedError("Translation engine must implement `translate`.")
+        
+    def get_supported_languages(self) -> dict:
+        """
+        Returns a dictionary of supported languages: { "code": "Language Name" }
+        """
+        return {}

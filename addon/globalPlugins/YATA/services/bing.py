@@ -39,6 +39,16 @@ class BingTranslate(TranslationEngine):
                 self.access_info = self._parse_jwt(app_key)
         return self.access_info['Token']
 
+    def get_supported_languages(self) -> dict:
+        url = "https://api.cognitive.microsofttranslator.com/languages?api-version=3.0&scope=translation"
+        try:
+            with urllib.request.urlopen(url) as response:
+                result = json.loads(response.read().decode('utf-8'))
+                langs = result.get('translation', {})
+                return {code: info.get('name', code) for code, info in langs.items()}
+        except Exception:
+            return {}
+
     def translate(self, text: str, source_lang: str = "auto", target_lang: str = "en", stream: bool = False):
         try:
             query = {

@@ -7,6 +7,27 @@ class DeepLTranslate(TranslationEngine):
     name = "DeepL"
     has_api_key = True
 
+    def get_supported_languages(self) -> dict:
+        api_key = self.config.get("api_key", "").strip()
+        default_langs = {"en": "English", "es": "Spanish", "fr": "French", "de": "German", "ja": "Japanese", "zh": "Chinese"}
+        if not api_key:
+            return default_langs
+            
+        is_free_api = api_key.endswith(":fx")
+        if is_free_api:
+            url = "https://api-free.deepl.com/v2/languages?type=target"
+        else:
+            url = "https://api.deepl.com/v2/languages?type=target"
+            
+        headers = {"Authorization": f"DeepL-Auth-Key {api_key}"}
+        req = urllib.request.Request(url, headers=headers)
+        try:
+            with urllib.request.urlopen(req) as response:
+                result = json.loads(response.read().decode('utf-8'))
+                return {lang['language'].lower(): lang['name'] for lang in result}
+        except Exception:
+            return default_langs
+
     def translate(self, text: str, source_lang: str = "auto", target_lang: str = "en", stream: bool = False):
         api_key = self.config.get("api_key", "").strip()
         if not api_key:

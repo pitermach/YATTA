@@ -6,6 +6,16 @@ from . import TranslationEngine
 class GoogleTranslate(TranslationEngine):
     name = "Google Translate (Free)"
 
+    def get_supported_languages(self) -> dict:
+        url = "https://translate.googleapis.com/translate_a/l?client=gtx"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        try:
+            with urllib.request.urlopen(req) as response:
+                result = json.loads(response.read().decode('utf-8'))
+                return result.get('tl', {})
+        except Exception:
+            return {}
+
     def translate(self, text: str, source_lang: str = "auto", target_lang: str = "en", stream: bool = False):
         url = "https://translate.googleapis.com/translate_a/single"
         params = {

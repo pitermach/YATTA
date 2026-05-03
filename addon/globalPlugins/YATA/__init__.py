@@ -27,6 +27,7 @@ confspec = {
     "ollama_address": "string(default='http://localhost:11434')",
     "ollama_model": "string(default='gemma:2b')",
     "ollama_system_prompt": "string(default='You are an expert translator. Translate the given text to the target language.')",
+    "ollama_user_prompt": "string(default='{TEXT}')",
     "ollama_stream": "boolean(default=True)"
 }
 config.conf.spec["YATA"] = confspec
