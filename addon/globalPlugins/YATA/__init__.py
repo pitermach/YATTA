@@ -19,10 +19,17 @@ try:
 except ImportError:
     speechModule = speech
 
+import languageHandler
+try:
+    _default_lang = languageHandler.getLanguage().replace('_', '-')
+    _default_lang = _default_lang.split('-')[0] # Get base language code like 'en', 'es', etc.
+except Exception:
+    _default_lang = 'en'
+
 confspec = {
     "service": "string(default='google')",
     "source_lang": "string(default='auto')",
-    "target_lang": "string(default='en')",
+    "target_lang": f"string(default='{_default_lang}')",
     "deepl_key": "string(default='')",
     "ollama_address": "string(default='http://localhost:11434')",
     "ollama_model": "string(default='gemma:2b')",
