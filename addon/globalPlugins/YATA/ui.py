@@ -4,7 +4,7 @@ from gui.settingsDialogs import SettingsPanel
 import config
 
 class YATASettingsPanel(SettingsPanel):
-    title = "Ultimate Translate"
+    title = "YATA"
     
     def makeSettings(self, settingsSizer):
         sHelper = gui.guiHelper.BoxSizerHelper(self, sizer=settingsSizer)
