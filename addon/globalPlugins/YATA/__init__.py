@@ -337,12 +337,12 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         ("a", "toggleAuto", "Toggle auto translate"),
     ]
 
-    @scriptHandler.script(description="Next layer command")
+    @scriptHandler.script()
     def script_layerNext(self, gesture):
         self._layer_index = (self._layer_index + 1) % len(self._layer_commands)
         self._announce_layer_command()
         
-    @scriptHandler.script(description="Previous layer command")
+    @scriptHandler.script()
     def script_layerPrev(self, gesture):
         self._layer_index = (self._layer_index - 1) % len(self._layer_commands)
         self._announce_layer_command()
@@ -351,7 +351,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         cmd = self._layer_commands[self._layer_index]
         nvda_ui.message(f"{cmd[2]}, {cmd[0]}")
         
-    @scriptHandler.script(description="Execute layer command")
+    @scriptHandler.script()
     def script_layerExecute(self, gesture):
         cmd = self._layer_commands[self._layer_index]
         script_name = f"script_{cmd[1]}"
