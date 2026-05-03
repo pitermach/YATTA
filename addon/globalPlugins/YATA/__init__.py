@@ -87,7 +87,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         else:
             return GoogleTranslate(conf.copy())
 
-    def translate_text(self, text, speak=True, copy=False):
+    def translate_text(self, text, speak=True, copy=False, browseable=False):
         if not text or not text.strip():
             return
             
@@ -131,6 +131,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         if cached:
             if speak:
                 speak_chunk(cached)
+            if browseable:
+                queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, cached, "YATA Translation")
             if copy:
                 api.copyToClip(cached)
             self._translation_cancel_events.discard(request_cancel_event)
@@ -148,6 +150,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                         cache.set_translation(app, target_lang, text, res)
                         if speak:
                             queueHandler.queueFunction(queueHandler.eventQueue, speak_chunk, res)
+                        if browseable:
+                            queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, res, "YATA Translation")
                         if copy:
                             api.copyToClip(res)
                     else:
@@ -184,6 +188,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                         final_text = "".join(full_text)
                         if not request_cancel_event.is_set():
                             cache.set_translation(app, target_lang, text, final_text)
+                            if browseable:
+                                queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, final_text, "YATA Translation")
                             if copy:
                                 api.copyToClip(final_text)
 
@@ -227,20 +233,22 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             return super().getScript(gesture)
         script = super().getScript(gesture)
         if not script:
-            self.toggling = False
-            self.clearGestureBindings()
-            self.bindGestures(self.__gestures)
-            import tones
-            tones.beep(120, 100)
-            return None
+            def dummy_script(g):
+                self.toggling = False
+                self.clearGestureBindings()
+                self.bindGestures(self.__gestures)
+                import tones
+                tones.beep(120, 100)
+            return dummy_script
         
         def wrapped_script(g):
             try:
                 script(g)
             finally:
-                self.toggling = False
-                self.clearGestureBindings()
-                self.bindGestures(self.__gestures)
+                if script.__name__ not in ("script_layerNext", "script_layerPrev"):
+                    self.toggling = False
+                    self.clearGestureBindings()
+                    self.bindGestures(self.__gestures)
         return wrapped_script
         
     @scriptHandler.script(description="Translation Layer (Press S, T, C, or A)")
@@ -251,6 +259,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             return
         self.bindGestures(self.__layerGestures)
         self.toggling = True
+        self._layer_index = 0
         import tones
         tones.beep(200, 10)
         
@@ -268,10 +277,31 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         except Exception:
             nvda_ui.message("No selection")
 
+    @scriptHandler.script(description="Translate selection in browseable message")
+    def script_translateSelectionBrowseable(self, gesture):
+        obj = api.getCaretObject()
+        try:
+            import textInfos
+            info = obj.makeTextInfo(textInfos.POSITION_SELECTION)
+            if info and not info.isCollapsed:
+                text = info.text
+                self.translate_text(text, speak=False, copy=False, browseable=True)
+            else:
+                nvda_ui.message("No selection")
+        except Exception:
+            nvda_ui.message("No selection")
+
     @scriptHandler.script(description="Translate last spoken phrase")
     def script_translateLast(self, gesture):
         if self.last_spoken_text:
             self.translate_text(self.last_spoken_text, speak=True, copy=False)
+        else:
+            nvda_ui.message("No last phrase found")
+
+    @scriptHandler.script(description="Translate last spoken phrase in browseable message")
+    def script_translateLastBrowseable(self, gesture):
+        if self.last_spoken_text:
+            self.translate_text(self.last_spoken_text, speak=False, copy=False, browseable=True)
         else:
             nvda_ui.message("No last phrase found")
 
@@ -283,17 +313,61 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         else:
             nvda_ui.message("No text on clipboard")
 
+    @scriptHandler.script(description="Translate clipboard in browseable message")
+    def script_translateClipboardBrowseable(self, gesture):
+        text = api.getClipData()
+        if text and isinstance(text, str) and not text.isspace():
+            self.translate_text(text, speak=False, copy=False, browseable=True)
+        else:
+            nvda_ui.message("No text on clipboard")
+
     @scriptHandler.script(description="Toggle auto translate")
     def script_toggleAuto(self, gesture):
         if not self.auto_translate: nvda_ui.message("Auto translate on")
         self.auto_translate = not self.auto_translate
         if not self.auto_translate: nvda_ui.message("Auto translate off")
 
+    _layer_commands = [
+        ("s", "translateSelection", "Translate selection"),
+        ("shift+s", "translateSelectionBrowseable", "Translate selection in browseable message"),
+        ("t", "translateLast", "Translate last spoken phrase"),
+        ("shift+t", "translateLastBrowseable", "Translate last spoken phrase in browseable message"),
+        ("c", "translateClipboard", "Translate clipboard"),
+        ("shift+c", "translateClipboardBrowseable", "Translate clipboard in browseable message"),
+        ("a", "toggleAuto", "Toggle auto translate"),
+    ]
+
+    @scriptHandler.script(description="Next layer command")
+    def script_layerNext(self, gesture):
+        self._layer_index = (self._layer_index + 1) % len(self._layer_commands)
+        self._announce_layer_command()
+        
+    @scriptHandler.script(description="Previous layer command")
+    def script_layerPrev(self, gesture):
+        self._layer_index = (self._layer_index - 1) % len(self._layer_commands)
+        self._announce_layer_command()
+        
+    def _announce_layer_command(self):
+        cmd = self._layer_commands[self._layer_index]
+        nvda_ui.message(f"{cmd[2]}, {cmd[0]}")
+        
+    @scriptHandler.script(description="Execute layer command")
+    def script_layerExecute(self, gesture):
+        cmd = self._layer_commands[self._layer_index]
+        script_name = f"script_{cmd[1]}"
+        getattr(self, script_name)(gesture)
+
     __layerGestures = {
         "kb:s": "translateSelection",
+        "kb:shift+s": "translateSelectionBrowseable",
         "kb:t": "translateLast",
+        "kb:shift+t": "translateLastBrowseable",
         "kb:c": "translateClipboard",
+        "kb:shift+c": "translateClipboardBrowseable",
         "kb:a": "toggleAuto",
+        "kb:tab": "layerNext",
+        "kb:shift+tab": "layerPrev",
+        "kb:enter": "layerExecute"
     }
     
     __gestures = {
