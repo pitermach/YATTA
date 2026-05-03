@@ -283,8 +283,9 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
     @scriptHandler.script(description="Toggle auto translate")
     def script_toggleAuto(self, gesture):
-        nvda_ui.message("Auto translate off" if self.auto_translate else "Auto translate on")
+        if not self.auto_translate: nvda_ui.message("Auto translate on")
         self.auto_translate = not self.auto_translate
+        if not self.auto_translate: nvda_ui.message("Auto translate off")
 
     __layerGestures = {
         "kb:s": "translateSelection",
