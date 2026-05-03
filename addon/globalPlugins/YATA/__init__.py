@@ -98,9 +98,10 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
         app = ""
         try:
-            obj = api.getForegroundObject()
+            import globalVars
+            obj = globalVars.focusObject
             if obj and obj.appModule:
-                app = obj.appModule.appModuleName
+                app = obj.appModule.appName
         except Exception:
             pass
 

@@ -10,10 +10,7 @@ class DeepLTranslate(TranslationEngine):
     def translate(self, text: str, source_lang: str = "auto", target_lang: str = "en", stream: bool = False):
         api_key = self.config.get("api_key", "").strip()
         if not api_key:
-            error_msg = "DeepL API key not configured."
-            if stream:
-                return iter([error_msg])
-            return error_msg
+            raise Exception("DeepL API key not configured.")
             
         is_free_api = api_key.endswith(":fx")
         if is_free_api:
@@ -46,7 +43,4 @@ class DeepLTranslate(TranslationEngine):
                 else:
                     return translated_text
         except Exception as e:
-            error_msg = f"DeepL Translate error: {str(e)}"
-            if stream:
-                return iter([error_msg])
-            return error_msg
+            raise Exception(f"DeepL Translate error: {str(e)}")

@@ -31,7 +31,4 @@ class GoogleTranslate(TranslationEngine):
                 else:
                     return translated_text
         except Exception as e:
-            error_msg = f"Google Translate error: {str(e)}"
-            if stream:
-                return iter([error_msg])
-            return error_msg
+            raise Exception(f"Google Translate error: {str(e)}")

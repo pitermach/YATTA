@@ -49,4 +49,4 @@ class OllamaTranslate(TranslationEngine):
                 result = json.loads(response.read().decode('utf-8'))
                 return result.get('response', '')
         except Exception as e:
-            return f"Ollama Translate error: {str(e)}"
+            raise Exception(f"Ollama Translate error: {str(e)}")

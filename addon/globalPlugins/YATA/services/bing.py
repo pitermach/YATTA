@@ -65,7 +65,4 @@ class BingTranslate(TranslationEngine):
                 else:
                     return translated_text
         except Exception as e:
-            error_msg = f"Bing Translate error: {str(e)}"
-            if stream:
-                return iter([error_msg])
-            return error_msg
+            raise Exception(f"Bing Translate error: {str(e)}")
