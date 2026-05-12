@@ -252,7 +252,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                             match_idx += 1
                         else:
                             tokenized_str += part
-                            regex_source += re.escape(part)
+                            regex_source += re.escape(part).replace(r"\ ", " ")
                     regex_source += "$"
                     
                     # Translate the tokenized string
