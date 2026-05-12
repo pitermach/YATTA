@@ -175,12 +175,14 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         self._translation_cancel_events.add(request_cancel_event)
 
         def speak_chunk(chunk):
-            if request_cancel_event.is_set(): return
-            self.speaking_translation = True
-            try:
-                nvda_ui.message(chunk)
-            finally:
-                self.speaking_translation = False
+            def do_speak():
+                if request_cancel_event.is_set(): return
+                self.speaking_translation = True
+                try:
+                    nvda_ui.message(chunk)
+                finally:
+                    self.speaking_translation = False
+            queueHandler.queueFunction(queueHandler.eventQueue, do_speak)
 
         def get_engine_with_prompts():
             conf_copy = conf.copy()
@@ -281,7 +283,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                 if isinstance(res, str):
                     if request_cancel_event.is_set(): return
                     cache.set_translation(app, target_lang, text, res, is_regexp=False)
-                    if speak: queueHandler.queueFunction(queueHandler.eventQueue, speak_chunk, res)
+                    if speak: speak_chunk(res)
                     if browseable: queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, res, "YATA Translation")
                     if copy: api.copyToClip(res)
                 else:
@@ -292,7 +294,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                         if sentence_buffer:
                             msg = "".join(sentence_buffer).strip()
                             if msg:
-                                queueHandler.queueFunction(queueHandler.eventQueue, speak_chunk, msg)
+                                speak_chunk(msg)
                             sentence_buffer.clear()
 
                     for chunk in res:
