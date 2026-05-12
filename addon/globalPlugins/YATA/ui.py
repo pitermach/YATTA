@@ -126,6 +126,10 @@ class YATAAppDialog(wx.Dialog):
         self.autoTranslate = sHelper.addItem(wx.CheckBox(self, label="Enable automatic translation"))
         self.autoTranslate.SetValue(auto_trans_val)
         
+        sep_num_val = self.app_conf.get("separate_numbers", str(self.global_conf.get("separate_numbers", False))).lower() == 'true'
+        self.separateNumbers = sHelper.addItem(wx.CheckBox(self, label="Separate numbers when translating"))
+        self.separateNumbers.SetValue(sep_num_val)
+        
         # Buttons
         btnSizer = wx.StdDialogButtonSizer()
         
@@ -174,6 +178,7 @@ class YATAAppDialog(wx.Dialog):
         self.app_conf["user_prompt"] = self.usrPrompt.GetValue()
         self.app_conf["save_cache"] = str(self.saveCache.GetValue())
         self.app_conf["auto_translate"] = str(self.autoTranslate.GetValue())
+        self.app_conf["separate_numbers"] = str(self.separateNumbers.GetValue())
         
         self.app_conf.filename = self.filepath
         self.app_conf.write()
@@ -247,6 +252,9 @@ class YATASettingsPanel(SettingsPanel):
         self.saveCache = sHelper.addItem(wx.CheckBox(self, label="Save cache to disk on exit"))
         self.saveCache.SetValue(conf.get("save_cache", True))
         
+        self.separateNumbers = sHelper.addItem(wx.CheckBox(self, label="Separate numbers when translating"))
+        self.separateNumbers.SetValue(conf.get("separate_numbers", False))
+        
         self._current_service = current_service
         self._loadLLMConfig(self._current_service)
         
@@ -300,6 +308,7 @@ class YATASettingsPanel(SettingsPanel):
         conf["target_lang"] = self.targetLang.GetValue()
         conf["deepl_key"] = self.deeplKey.GetValue()
         conf["save_cache"] = self.saveCache.GetValue()
+        conf["separate_numbers"] = self.separateNumbers.GetValue()
         self._saveLLMConfig(self._current_service)
 
     def onSelectLanguage(self, txtCtrl):
@@ -355,3 +364,170 @@ class YATASettingsPanel(SettingsPanel):
 
     def onLoadDefaultPrompt(self, evt):
         load_default_prompt_helper(self.llmModel.GetValue(), self.llmPrompt, self.llmUserPrompt)
+class CacheEntryDialog(wx.Dialog):
+    def __init__(self, parent, title, source="", translation="", is_regexp=False):
+        super().__init__(parent, title=title)
+        
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        import gui
+        sHelper = gui.guiHelper.BoxSizerHelper(self, sizer=mainSizer)
+        
+        self.sourceCtrl = sHelper.addLabeledControl("Source text:", wx.TextCtrl, value=source)
+        self.transCtrl = sHelper.addLabeledControl("Translation:", wx.TextCtrl, value=translation)
+        
+        self.regexpChk = sHelper.addItem(wx.CheckBox(self, label="Is Regular Expression"))
+        self.regexpChk.SetValue(is_regexp)
+        
+        btnSizer = wx.StdDialogButtonSizer()
+        btnOK = wx.Button(self, wx.ID_OK)
+        btnOK.SetDefault()
+        btnSizer.AddButton(btnOK)
+        btnCancel = wx.Button(self, wx.ID_CANCEL)
+        btnSizer.AddButton(btnCancel)
+        btnSizer.Realize()
+        
+        sHelper.addItem(btnSizer)
+        
+        self.Bind(wx.EVT_BUTTON, self.onOK, id=wx.ID_OK)
+        
+        self.SetSizer(mainSizer)
+        mainSizer.Fit(self)
+        
+    def onOK(self, evt):
+        if self.regexpChk.GetValue():
+            import re
+            source = self.sourceCtrl.GetValue()
+            try:
+                prog = re.compile(source)
+            except Exception as e:
+                import gui
+                gui.messageBox(f"Invalid regular expression:\n{e}", "Error", style=wx.OK | wx.ICON_ERROR)
+                return
+                
+            groups = prog.groups
+            trans = self.transCtrl.GetValue()
+            
+            import string
+            formatter = string.Formatter()
+            for literal_text, field_name, format_spec, conversion in formatter.parse(trans):
+                if field_name is not None:
+                    if field_name.startswith('T') or field_name.startswith('P'):
+                        try:
+                            idx = int(field_name[1:])
+                            if idx < 1 or idx > groups:
+                                import gui
+                                gui.messageBox(f"Token {{{field_name}}} refers to group {idx}, but the regex only has {groups} capture groups.", "Error", style=wx.OK | wx.ICON_ERROR)
+                                return
+                        except ValueError:
+                            pass
+        evt.Skip()
+        
+    def get_data(self):
+        return {
+            "source": self.sourceCtrl.GetValue(),
+            "translation": self.transCtrl.GetValue(),
+            "is_regexp": self.regexpChk.GetValue()
+        }
+
+class CacheEditorDialog(wx.Dialog):
+    def __init__(self, parent, app_name, target_lang):
+        super().__init__(parent, title=f"Cache Editor - {app_name} ({target_lang})", size=(600, 400))
+        self.app_name = app_name
+        self.target_lang = target_lang
+        
+        from . import cache
+        self.entries = cache.get_cache_entries(app_name, target_lang)
+        
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        
+        self.listCtrl = wx.ListCtrl(self, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.BORDER_SUNKEN)
+        self.listCtrl.InsertColumn(0, "Source text", width=200)
+        self.listCtrl.InsertColumn(1, "Translation", width=200)
+        self.listCtrl.InsertColumn(2, "Is Regex", width=100)
+        
+        self.refresh_list()
+        mainSizer.Add(self.listCtrl, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
+        
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        btnAdd = wx.Button(self, label="&Add")
+        btnAdd.Bind(wx.EVT_BUTTON, self.onAdd)
+        btnSizer.Add(btnAdd, flag=wx.RIGHT, border=5)
+        
+        btnEdit = wx.Button(self, label="&Edit")
+        btnEdit.Bind(wx.EVT_BUTTON, self.onEdit)
+        btnSizer.Add(btnEdit, flag=wx.RIGHT, border=5)
+        
+        btnDelete = wx.Button(self, label="&Delete")
+        btnDelete.Bind(wx.EVT_BUTTON, self.onDelete)
+        btnSizer.Add(btnDelete, flag=wx.RIGHT, border=5)
+        
+        btnClear = wx.Button(self, label="&Clear Cache")
+        btnClear.Bind(wx.EVT_BUTTON, self.onClear)
+        btnSizer.Add(btnClear)
+        
+        mainSizer.Add(btnSizer, flag=wx.ALIGN_CENTER | wx.ALL, border=5)
+        
+        stdBtnSizer = wx.StdDialogButtonSizer()
+        btnOK = wx.Button(self, wx.ID_OK)
+        btnOK.SetDefault()
+        stdBtnSizer.AddButton(btnOK)
+        btnCancel = wx.Button(self, wx.ID_CANCEL)
+        stdBtnSizer.AddButton(btnCancel)
+        stdBtnSizer.Realize()
+        
+        self.Bind(wx.EVT_BUTTON, self.onOK, id=wx.ID_OK)
+        self.Bind(wx.EVT_BUTTON, self.onCancel, id=wx.ID_CANCEL)
+        
+        mainSizer.Add(stdBtnSizer, flag=wx.ALIGN_RIGHT | wx.ALL, border=5)
+        
+        self.SetSizer(mainSizer)
+        
+    def refresh_list(self):
+        self.listCtrl.DeleteAllItems()
+        for i, entry in enumerate(self.entries):
+            idx = self.listCtrl.InsertItem(i, entry.get("source", ""))
+            self.listCtrl.SetItem(idx, 1, entry.get("translation", ""))
+            self.listCtrl.SetItem(idx, 2, "Yes" if entry.get("is_regexp") else "No")
+            
+    def onAdd(self, evt):
+        dlg = CacheEntryDialog(self, "Add Cache Entry")
+        if dlg.ShowModal() == wx.ID_OK:
+            self.entries.append(dlg.get_data())
+            self.refresh_list()
+        dlg.Destroy()
+        
+    def onEdit(self, evt):
+        idx = self.listCtrl.GetFirstSelected()
+        if idx < 0: return
+        entry = self.entries[idx]
+        dlg = CacheEntryDialog(self, "Edit Cache Entry", source=entry.get("source", ""), translation=entry.get("translation", ""), is_regexp=entry.get("is_regexp", False))
+        if dlg.ShowModal() == wx.ID_OK:
+            self.entries[idx] = dlg.get_data()
+            self.refresh_list()
+        dlg.Destroy()
+        
+    def onDelete(self, evt):
+        idx = self.listCtrl.GetFirstSelected()
+        if idx < 0: return
+        del self.entries[idx]
+        self.refresh_list()
+        
+    def onClear(self, evt):
+        import gui
+        if gui.messageBox("Are you sure you want to clear the entire cache for this app?", "Clear Cache", style=wx.YES_NO | wx.ICON_QUESTION) == wx.YES:
+            from . import cache
+            cache.clear_app_cache(self.app_name)
+            self.entries = []
+            self.refresh_list()
+            
+    def onOK(self, evt):
+        from . import cache
+        app_cache = cache._cache.get(self.app_name, {})
+        app_cache[self.target_lang] = self.entries
+        cache._cache[self.app_name] = app_cache
+        cache.save()
+        self.Destroy()
+        
+    def onCancel(self, evt):
+        self.Destroy()

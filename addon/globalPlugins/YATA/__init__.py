@@ -47,7 +47,8 @@ confspec = {
     "gemini_system_prompt": "string(default='You are an expert translator. Translate the given text to the target language.')",
     "gemini_user_prompt": "string(default='{TEXT}')",
     "gemini_stream": "boolean(default=True)",
-    "save_cache": "boolean(default=True)"
+    "save_cache": "boolean(default=True)",
+    "separate_numbers": "boolean(default=False)"
 }
 config.conf.spec["YATA"] = confspec
 
@@ -166,6 +167,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         source_lang = self._get_app_setting(app, "source_lang", conf["source_lang"])
         service = conf["service"]
         stream_ollama = conf.get(f"{service}_stream", True) and service in ("ollama", "openai", "gemini")
+        separate_numbers = str(self._get_app_setting(app, "separate_numbers", conf.get("separate_numbers", False))).lower() == 'true'
         
         cached = cache.get_translation(app, target_lang, text)
         
@@ -173,90 +175,149 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         self._translation_cancel_events.add(request_cancel_event)
 
         def speak_chunk(chunk):
-            logHandler.log.debug(f"YATA speak_chunk evaluating: {chunk!r}, canceled: {request_cancel_event.is_set()}")
-            if request_cancel_event.is_set():
-                logHandler.log.debug("YATA speak_chunk canceled, returning.")
-                return
+            if request_cancel_event.is_set(): return
             self.speaking_translation = True
             try:
-                logHandler.log.debug(f"YATA calling nvda_ui.message for: {chunk!r}")
                 nvda_ui.message(chunk)
             finally:
                 self.speaking_translation = False
 
-        if cached:
-            if speak:
-                speak_chunk(cached)
-            if browseable:
-                queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, cached, "YATA Translation")
-            if copy:
-                api.copyToClip(cached)
-            self._translation_cancel_events.discard(request_cancel_event)
-            return
+        def get_engine_with_prompts():
+            conf_copy = conf.copy()
+            system_prompt = self._get_app_setting(app, "system_prompt", conf.get(f"{service}_system_prompt", ""))
+            user_prompt = self._get_app_setting(app, "user_prompt", conf.get(f"{service}_user_prompt", ""))
+            conf_copy[f"{service}_system_prompt"] = system_prompt
+            conf_copy[f"{service}_user_prompt"] = user_prompt
+            return self.get_engine(conf_copy)
 
         def do_translate():
-            logHandler.log.debug(f"YATA do_translate started for text: {text!r}")
             try:
-                conf_copy = conf.copy()
-                system_prompt = self._get_app_setting(app, "system_prompt", conf.get(f"{service}_system_prompt", ""))
-                user_prompt = self._get_app_setting(app, "user_prompt", conf.get(f"{service}_user_prompt", ""))
-                conf_copy[f"{service}_system_prompt"] = system_prompt
-                conf_copy[f"{service}_user_prompt"] = user_prompt
-                engine = self.get_engine(conf_copy)
-                try:
-                    res = engine.translate(text, source_lang, target_lang, stream=stream_ollama)
-                    if isinstance(res, str):
-                        if request_cancel_event.is_set():
-                            return
-                        cache.set_translation(app, target_lang, text, res)
-                        if speak:
-                            queueHandler.queueFunction(queueHandler.eventQueue, speak_chunk, res)
-                        if browseable:
-                            queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, res, "YATA Translation")
-                        if copy:
-                            api.copyToClip(res)
+                engine = get_engine_with_prompts()
+                
+                # Helper to translate a single string without streaming, ignoring speak
+                def translate_single(s):
+                    res = engine.translate(s, source_lang, target_lang, stream=False)
+                    return res if isinstance(res, str) else "".join(res)
+                
+                def process_regex_template(template, matches):
+                    import string
+                    formatter = string.Formatter()
+                    final_parts = []
+                    for literal_text, field_name, format_spec, conversion in formatter.parse(template):
+                        if request_cancel_event.is_set(): return ""
+                        if literal_text:
+                            final_parts.append(literal_text)
+                        if field_name is not None:
+                            try:
+                                idx = int(field_name[1:]) - 1
+                                if 0 <= idx < len(matches):
+                                    val = matches[idx]
+                                    if field_name.startswith('T'):
+                                        # Translate it
+                                        val = translate_single(val)
+                                    final_parts.append(val)
+                            except Exception:
+                                pass
+                    return "".join(final_parts)
+                
+                if cached:
+                    if cached.get("is_regexp"):
+                        final_text = process_regex_template(cached["template"], cached["matches"])
                     else:
-                        full_text = []
-                        sentence_buffer = []
+                        final_text = cached["template"]
                         
-                        def emit_buffer():
-                            if sentence_buffer:
-                                msg = "".join(sentence_buffer).strip()
-                                logHandler.log.debug(f"YATA emit_buffer called with msg: {msg!r}")
-                                if msg:
-                                    queueHandler.queueFunction(queueHandler.eventQueue, speak_chunk, msg)
-                                sentence_buffer.clear()
+                    if request_cancel_event.is_set(): return
+                    if speak: speak_chunk(final_text)
+                    if browseable: queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, final_text, "YATA Translation")
+                    if copy: api.copyToClip(final_text)
+                    return
 
-                        logHandler.log.debug("YATA entering streaming chunk loop")
-                        for chunk in res:
-                            logHandler.log.debug(f"YATA yielded chunk: {chunk!r}")
-                            if request_cancel_event.is_set():
-                                logHandler.log.debug("YATA chunk loop break: cancel event is set")
-                                try:
-                                    res.close()
-                                except Exception:
-                                    pass
-                                break
-                            full_text.append(chunk)
-                            if speak:
-                                sentence_buffer.append(chunk)
-                                if any(c in chunk for c in ['.', '?', '!', '。', '？', '！', '\n']):
-                                    emit_buffer()
+                # Automatic Number Separation Pre-Processing
+                import re
+                parts = []
+                if separate_numbers:
+                    parts = re.split(r'([\d/]+)', text)
+                
+                if separate_numbers and len(parts) > 1:
+                    # We have numbers. Build tokenized string
+                    tokenized_str = ""
+                    regex_source = "^"
+                    match_idx = 1
+                    for part in parts:
+                        if re.match(r'^[\d/]+$', part):
+                            tokenized_str += f"<token{match_idx}>"
+                            regex_source += r"([\d/]+)"
+                            match_idx += 1
+                        else:
+                            tokenized_str += part
+                            regex_source += re.escape(part)
+                    regex_source += "$"
+                    
+                    # Translate the tokenized string
+                    res = engine.translate(tokenized_str, source_lang, target_lang, stream=False)
+                    res_str = res if isinstance(res, str) else "".join(res)
+                    if request_cancel_event.is_set(): return
+                    
+                    # Replace <tokenX> with {PX}
+                    template = res_str
+                    for i in range(1, match_idx):
+                        template = template.replace(f"<token{i}>", f"{{P{i}}}")
                         
+                    # Save to cache
+                    cache.set_translation(app, target_lang, regex_source, template, is_regexp=True)
+                    
+                    # Now process it like a normal regex hit
+                    match = re.search(regex_source, text)
+                    if match:
+                        final_text = process_regex_template(template, match.groups())
+                        if request_cancel_event.is_set(): return
+                        if speak: speak_chunk(final_text)
+                        if browseable: queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, final_text, "YATA Translation")
+                        if copy: api.copyToClip(final_text)
+                        return
+
+                # Normal translation
+                res = engine.translate(text, source_lang, target_lang, stream=stream_ollama)
+                if isinstance(res, str):
+                    if request_cancel_event.is_set(): return
+                    cache.set_translation(app, target_lang, text, res, is_regexp=False)
+                    if speak: queueHandler.queueFunction(queueHandler.eventQueue, speak_chunk, res)
+                    if browseable: queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, res, "YATA Translation")
+                    if copy: api.copyToClip(res)
+                else:
+                    full_text = []
+                    sentence_buffer = []
+                    
+                    def emit_buffer():
+                        if sentence_buffer:
+                            msg = "".join(sentence_buffer).strip()
+                            if msg:
+                                queueHandler.queueFunction(queueHandler.eventQueue, speak_chunk, msg)
+                            sentence_buffer.clear()
+
+                    for chunk in res:
+                        if request_cancel_event.is_set():
+                            try: res.close()
+                            except: pass
+                            break
+                        full_text.append(chunk)
                         if speak:
-                            emit_buffer()
-                        
-                        final_text = "".join(full_text)
-                        if not request_cancel_event.is_set():
-                            cache.set_translation(app, target_lang, text, final_text)
-                            if browseable:
-                                queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, final_text, "YATA Translation")
-                            if copy:
-                                api.copyToClip(final_text)
-
-                except Exception as e:
+                            sentence_buffer.append(chunk)
+                            if any(c in chunk for c in ['.', '?', '!', '。', '？', '！', '\n']):
+                                emit_buffer()
+                    
+                    if speak:
+                        emit_buffer()
+                    
+                    final_text = "".join(full_text)
                     if not request_cancel_event.is_set():
-                        queueHandler.queueFunction(queueHandler.eventQueue, speak_chunk, f"Error: {e}")
+                        cache.set_translation(app, target_lang, text, final_text, is_regexp=False)
+                        if browseable: queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, final_text, "YATA Translation")
+                        if copy: api.copyToClip(final_text)
+
+            except Exception as e:
+                if not request_cancel_event.is_set():
+                    queueHandler.queueFunction(queueHandler.eventQueue, speak_chunk, f"Error: {e}")
             finally:
                 self._translation_cancel_events.discard(request_cancel_event)
 
@@ -414,6 +475,26 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             
         wx.CallAfter(show_dialog)
 
+    @scriptHandler.script(description="Open cache editor")
+    def script_cacheEditor(self, gesture):
+        app = self._get_app_name()
+        
+        import config
+        conf = config.conf["YATA"]
+        target_lang = self._get_app_setting(app, "target_lang", conf["target_lang"])
+
+        import wx
+        def show_dialog():
+            import core
+            from .ui import CacheEditorDialog
+            import gui
+            gui.mainFrame.prePopup()
+            dlg = CacheEditorDialog(gui.mainFrame, app, target_lang)
+            dlg.Show()
+            gui.mainFrame.postPopup()
+            
+        wx.CallAfter(show_dialog)
+
     _layer_commands = [
         ("s", "translateSelection", "Translate selection"),
         ("shift+s", "translateSelectionBrowseable", "Translate selection in browseable message"),
@@ -423,6 +504,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         ("shift+c", "translateClipboardBrowseable", "Translate clipboard in browseable message"),
         ("a", "toggleAuto", "Toggle auto translate"),
         ("o", "appSettings", "Open application settings"),
+        ("e", "cacheEditor", "Open cache editor"),
     ]
 
     @scriptHandler.script()
@@ -454,6 +536,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         "kb:shift+c": "translateClipboardBrowseable",
         "kb:a": "toggleAuto",
         "kb:o": "appSettings",
+        "kb:e": "cacheEditor",
         "kb:tab": "layerNext",
         "kb:shift+tab": "layerPrev",
         "kb:enter": "layerExecute"
