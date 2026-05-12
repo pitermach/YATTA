@@ -401,8 +401,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             nvda_ui.message("No application active")
             return
         
+        import wx
         def show_dialog():
-            import wx
             import core
             from .ui import YATAAppDialog
             import gui
