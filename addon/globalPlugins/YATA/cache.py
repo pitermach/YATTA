@@ -9,7 +9,7 @@ _cache_dir = ""
 
 def init():
     global _cache_dir, _cache
-    _cache_dir = os.path.join(globalVars.appArgs.configPath, "YATA_cache")
+    _cache_dir = os.path.join(globalVars.appArgs.configPath, "YATA/cache")
     if not os.path.exists(_cache_dir):
         try:
             os.makedirs(_cache_dir)
@@ -27,24 +27,6 @@ def init():
                         _cache[app_name] = json.load(f)
                 except Exception:
                     pass
-
-    # Migrate legacy cache
-    legacy_file = os.path.join(globalVars.appArgs.configPath, "YATA_cache.json")
-    if os.path.exists(legacy_file):
-        try:
-            with open(legacy_file, "r", encoding="utf-8") as f:
-                legacy_cache = json.load(f)
-                for app_name, data in legacy_cache.items():
-                    if app_name not in _cache:
-                        _cache[app_name] = data
-                    else:
-                        _cache[app_name].update(data)
-            try:
-                os.rename(legacy_file, legacy_file + ".bak")
-            except Exception:
-                pass
-        except Exception:
-            pass
 
 def save():
     with _cache_lock:
