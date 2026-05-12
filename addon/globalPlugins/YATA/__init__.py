@@ -196,10 +196,17 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             try:
                 engine = get_engine_with_prompts()
                 
-                # Helper to translate a single string without streaming, ignoring speak
                 def translate_single(s):
+                    cached_s = cache.get_translation(app, target_lang, s)
+                    if cached_s:
+                        if cached_s.get("is_regexp"):
+                            return process_regex_template(cached_s["template"], cached_s["matches"])
+                        return cached_s["template"]
+                        
                     res = engine.translate(s, source_lang, target_lang, stream=False)
-                    return res if isinstance(res, str) else "".join(res)
+                    res_str = res if isinstance(res, str) else "".join(res)
+                    cache.set_translation(app, target_lang, s, res_str, is_regexp=False)
+                    return res_str
                 
                 def process_regex_template(template, matches):
                     import string
