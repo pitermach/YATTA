@@ -46,7 +46,8 @@ confspec = {
     "gemini_model": "string(default='gemini-2.5-flash')",
     "gemini_system_prompt": "string(default='You are an expert translator. Translate the given text to the target language.')",
     "gemini_user_prompt": "string(default='{TEXT}')",
-    "gemini_stream": "boolean(default=True)"
+    "gemini_stream": "boolean(default=True)",
+    "save_cache": "boolean(default=True)"
 }
 config.conf.spec["YATA"] = confspec
 
@@ -80,7 +81,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         self.last_spoken_text = ""
 
     def terminate(self):
-        cache.save()
+        if config.conf["YATA"].get("save_cache", True):
+            cache.save()
         import gui
         try:
             gui.settingsDialogs.NVDASettingsDialog.categoryClasses.remove(ui.YATASettingsPanel)

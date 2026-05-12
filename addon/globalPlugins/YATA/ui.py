@@ -65,6 +65,9 @@ class YATASettingsPanel(SettingsPanel):
         self.llmPanel.SetSizer(llmSizer)
         sHelper.addItem(self.llmPanel)
         
+        self.saveCache = sHelper.addItem(wx.CheckBox(self, label="Save cache to disk on exit"))
+        self.saveCache.SetValue(conf.get("save_cache", True))
+        
         self._current_service = current_service
         self._loadLLMConfig(self._current_service)
         
@@ -117,6 +120,7 @@ class YATASettingsPanel(SettingsPanel):
         conf["source_lang"] = self.sourceLang.GetValue()
         conf["target_lang"] = self.targetLang.GetValue()
         conf["deepl_key"] = self.deeplKey.GetValue()
+        conf["save_cache"] = self.saveCache.GetValue()
         self._saveLLMConfig(self._current_service)
 
     def onSelectLanguage(self, txtCtrl):
