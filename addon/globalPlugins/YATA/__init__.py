@@ -59,6 +59,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         self.toggling = False
         cache.init()
         self.auto_translate = False
+        self.auto_translate_apps = {}
         import gui
         gui.settingsDialogs.NVDASettingsDialog.categoryClasses.append(ui.YATASettingsPanel)
         
@@ -95,9 +96,43 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         except Exception as e:
             logHandler.log.warning(f"YATA: Failed to unregister speech.speechCanceled: {e}")
 
-    def get_engine(self):
-        conf = config.conf["YATA"]
-        service = conf["service"]
+    def _get_app_name(self):
+        try:
+            import globalVars
+            obj = globalVars.focusObject
+            if obj and obj.appModule:
+                return obj.appModule.appName
+        except Exception:
+            pass
+        return ""
+
+    def _get_app_setting(self, app, key, default_val):
+        if not app: return default_val
+        import os, configobj, globalVars
+        settings_dir = os.path.join(globalVars.appArgs.configPath, "YATA", "settings")
+        filepath = os.path.join(settings_dir, f"{app}.ini")
+        if os.path.exists(filepath):
+            try:
+                conf = configobj.ConfigObj(filepath)
+                if key in conf:
+                    return conf[key]
+            except Exception:
+                pass
+        return default_val
+
+    def _get_auto_translate_state(self, app):
+        if app in getattr(self, 'auto_translate_apps', {}):
+            return self.auto_translate_apps[app]
+        val = self._get_app_setting(app, "auto_translate", None)
+        if val is not None:
+            return str(val).lower() == 'true'
+        return getattr(self, 'auto_translate', False)
+
+    def get_engine(self, conf_dict=None):
+        if conf_dict is None:
+            conf_dict = config.conf["YATA"].copy()
+        service = conf_dict["service"]
+        conf = conf_dict
         if service == "bing":
             return BingTranslate(conf.copy())
         elif service == "deepl":
@@ -124,18 +159,11 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         if stripped.isdigit():
             return
 
-        app = ""
-        try:
-            import globalVars
-            obj = globalVars.focusObject
-            if obj and obj.appModule:
-                app = obj.appModule.appName
-        except Exception:
-            pass
+        app = self._get_app_name()
 
         conf = config.conf["YATA"]
-        target_lang = conf["target_lang"]
-        source_lang = conf["source_lang"]
+        target_lang = self._get_app_setting(app, "target_lang", conf["target_lang"])
+        source_lang = self._get_app_setting(app, "source_lang", conf["source_lang"])
         service = conf["service"]
         stream_ollama = conf.get(f"{service}_stream", True) and service in ("ollama", "openai", "gemini")
         
@@ -169,7 +197,12 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         def do_translate():
             logHandler.log.debug(f"YATA do_translate started for text: {text!r}")
             try:
-                engine = self.get_engine()
+                conf_copy = conf.copy()
+                system_prompt = self._get_app_setting(app, "system_prompt", conf.get(f"{service}_system_prompt", ""))
+                user_prompt = self._get_app_setting(app, "user_prompt", conf.get(f"{service}_user_prompt", ""))
+                conf_copy[f"{service}_system_prompt"] = system_prompt
+                conf_copy[f"{service}_user_prompt"] = user_prompt
+                engine = self.get_engine(conf_copy)
                 try:
                     res = engine.translate(text, source_lang, target_lang, stream=stream_ollama)
                     if isinstance(res, str):
@@ -238,7 +271,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         if texts:
             text = " ".join(texts)
             self.last_spoken_text = text
-            if self.auto_translate:
+            app = self._get_app_name()
+            if self._get_auto_translate_state(app):
                 self.translate_text(text, speak=True, copy=False)
                 return
         self._original_speak(speechSequence, *args, **kwargs)
@@ -351,9 +385,33 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
     @scriptHandler.script(description="Toggle auto translate")
     def script_toggleAuto(self, gesture):
-        if not self.auto_translate: nvda_ui.message("Auto translate on")
-        self.auto_translate = not self.auto_translate
-        if not self.auto_translate: nvda_ui.message("Auto translate off")
+        app = self._get_app_name()
+        current_state = self._get_auto_translate_state(app)
+        new_state = not current_state
+        self.auto_translate_apps[app] = new_state
+        if new_state:
+            nvda_ui.message(f"Auto translate on for {app}")
+        else:
+            nvda_ui.message(f"Auto translate off for {app}")
+
+    @scriptHandler.script(description="Open application settings")
+    def script_appSettings(self, gesture):
+        app = self._get_app_name()
+        if not app:
+            nvda_ui.message("No application active")
+            return
+        
+        def show_dialog():
+            import wx
+            import core
+            from .ui import YATAAppDialog
+            import gui
+            gui.mainFrame.prePopup()
+            dlg = YATAAppDialog(gui.mainFrame, app)
+            dlg.Show()
+            gui.mainFrame.postPopup()
+            
+        wx.CallAfter(show_dialog)
 
     _layer_commands = [
         ("s", "translateSelection", "Translate selection"),
@@ -363,6 +421,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         ("c", "translateClipboard", "Translate clipboard"),
         ("shift+c", "translateClipboardBrowseable", "Translate clipboard in browseable message"),
         ("a", "toggleAuto", "Toggle auto translate"),
+        ("o", "appSettings", "Open application settings"),
     ]
 
     @scriptHandler.script()
@@ -393,6 +452,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         "kb:c": "translateClipboard",
         "kb:shift+c": "translateClipboardBrowseable",
         "kb:a": "toggleAuto",
+        "kb:o": "appSettings",
         "kb:tab": "layerNext",
         "kb:shift+tab": "layerPrev",
         "kb:enter": "layerExecute"

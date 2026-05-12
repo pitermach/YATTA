@@ -29,6 +29,22 @@ def init():
                     pass
 
 def save():
+    import config
+    global_save = config.conf["YATA"].get("save_cache", True)
+    
+    def should_save(app):
+        import os, configobj, globalVars
+        settings_dir = os.path.join(globalVars.appArgs.configPath, "YATA", "settings")
+        filepath = os.path.join(settings_dir, f"{app}.ini")
+        if os.path.exists(filepath):
+            try:
+                conf = configobj.ConfigObj(filepath)
+                if "save_cache" in conf:
+                    return conf["save_cache"].lower() == 'true'
+            except Exception:
+                pass
+        return global_save
+
     with _cache_lock:
         if not os.path.exists(_cache_dir):
             try:
@@ -37,6 +53,8 @@ def save():
                 return
                 
         for app_name, data in _cache.items():
+            if not should_save(app_name):
+                continue
             filepath = os.path.join(_cache_dir, f"{app_name}.json")
             try:
                 with open(filepath, "w", encoding="utf-8") as f:
