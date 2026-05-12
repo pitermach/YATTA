@@ -388,10 +388,11 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         app = self._get_app_name()
         current_state = self._get_auto_translate_state(app)
         new_state = not current_state
-        self.auto_translate_apps[app] = new_state
         if new_state:
             nvda_ui.message(f"Auto translate on for {app}")
+            self.auto_translate_apps[app] = new_state
         else:
+            self.auto_translate_apps[app] = new_state
             nvda_ui.message(f"Auto translate off for {app}")
 
     @scriptHandler.script(description="Open application settings")

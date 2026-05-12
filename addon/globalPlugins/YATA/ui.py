@@ -161,7 +161,7 @@ class YATAAppDialog(wx.Dialog):
         
     def onReset(self, evt):
         import gui
-        if gui.messageBox("Are you sure you want to reset settings for this app?", "Confirm Reset", wx.YES_NO | wx.ICON_QUESTION) == wx.YES:
+        if gui.messageBox("Are you sure you want to reset settings for this app?", "Confirm Reset", style=wx.YES_NO | wx.ICON_QUESTION) == wx.YES:
             import os
             if os.path.exists(self.filepath):
                 os.remove(self.filepath)
