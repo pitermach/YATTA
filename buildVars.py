@@ -30,7 +30,7 @@ addon_info = AddonInfo(
 	# Author(s)
 	addon_author="Piotr Machacz <pitermach@gmail.com>",
 	# URL for the add-on documentation support
-	addon_url="https://github.com/pitermach/YATA/"",
+	addon_url="https://github.com/pitermach/YATA/",
 	# URL for the add-on repository where the source code can be found
 	addon_sourceURL="https://github.com/pitermach/YATA/",
 	# Documentation file name
@@ -57,7 +57,7 @@ addon_info = AddonInfo(
 # pythonSources = ["addon/globalPlugins/*.py"]
 # For more information on SCons Glob expressions please take a look at:
 # https://scons.org/doc/production/HTML/scons-user/apd.html
-pythonSources: list[str] = [addon/globalPlugins/*.py]
+pythonSources: list[str] = ["addon/globalPlugins/*.py"]
 
 # Files that contain strings for translation. Usually your python sources
 i18nSources: list[str] = pythonSources + ["buildVars.py"]
