@@ -150,7 +150,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         else:
             return GoogleTranslate(conf.copy())
 
-    def translate_text(self, text, speak=True, copy=False, browseable=False):
+    def translate_text(self, text, speak=True, browseable=False):
         if not text or not text.strip():
             return
             
@@ -282,7 +282,6 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                         if request_cancel_event.is_set(): return
                         if speak: speak_chunk(final_text)
                         if browseable: queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, final_text, "YATA Translation")
-                        if copy: api.copyToClip(final_text)
                         return
 
                 # Normal translation
@@ -292,7 +291,6 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                     cache.set_translation(app, target_lang, text, res, is_regexp=False)
                     if speak: speak_chunk(res)
                     if browseable: queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, res, "YATA Translation")
-                    if copy: api.copyToClip(res)
                 else:
                     full_text = []
                     sentence_buffer = []
@@ -322,7 +320,6 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                     if not request_cancel_event.is_set():
                         cache.set_translation(app, target_lang, text, final_text, is_regexp=False)
                         if browseable: queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, final_text, "YATA Translation")
-                        if copy: api.copyToClip(final_text)
 
             except Exception as e:
                 if not request_cancel_event.is_set():
@@ -391,7 +388,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             return
         self.bindGestures(self.__layerGestures)
         self.toggling = True
-        self._layer_index = 0
+        self._layer_index = -1
         import tones
         tones.beep(200, 10)
         
@@ -417,7 +414,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             info = obj.makeTextInfo(textInfos.POSITION_SELECTION)
             if info and not info.isCollapsed:
                 text = info.text
-                self.translate_text(text, speak=False, copy=False, browseable=True)
+                self.translate_text(text, speak=False, browseable=True)
             else:
                 nvda_ui.message("No selection")
         except Exception:
@@ -426,14 +423,14 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
     @scriptHandler.script(description="Translate last spoken phrase")
     def script_translateLast(self, gesture):
         if self.last_spoken_text:
-            self.translate_text(self.last_spoken_text, speak=True, copy=False)
+            self.translate_text(self.last_spoken_text, speak=True)
         else:
             nvda_ui.message("No last phrase found")
 
     @scriptHandler.script(description="Translate last spoken phrase in browseable message")
     def script_translateLastBrowseable(self, gesture):
         if self.last_spoken_text:
-            self.translate_text(self.last_spoken_text, speak=False, copy=False, browseable=True)
+            self.translate_text(self.last_spoken_text, speak=False, browseable=True)
         else:
             nvda_ui.message("No last phrase found")
 
@@ -441,7 +438,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
     def script_translateClipboard(self, gesture):
         text = api.getClipData()
         if text and isinstance(text, str) and not text.isspace():
-            self.translate_text(text, speak=True, copy=False)
+            self.translate_text(text, speak=True)
         else:
             nvda_ui.message("No text on clipboard")
 
@@ -449,7 +446,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
     def script_translateClipboardBrowseable(self, gesture):
         text = api.getClipData()
         if text and isinstance(text, str) and not text.isspace():
-            self.translate_text(text, speak=False, copy=False, browseable=True)
+            self.translate_text(text, speak=False, browseable=True)
         else:
             nvda_ui.message("No text on clipboard")
 
