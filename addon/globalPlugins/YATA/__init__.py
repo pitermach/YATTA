@@ -240,7 +240,6 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                     if request_cancel_event.is_set(): return
                     if speak: speak_chunk(final_text)
                     if browseable: queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, final_text, "YATA Translation")
-                    if copy: api.copyToClip(final_text)
                     return
 
                 # Automatic Number Separation Pre-Processing
