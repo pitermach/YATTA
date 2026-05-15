@@ -342,7 +342,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             self.last_spoken_text = text
             app = self._get_app_name()
             if self._get_auto_translate_state(app):
-                self.translate_text(text, speak=True, copy=False)
+                self.translate_text(text, speak=True)
                 return
         self._original_speak(speechSequence, *args, **kwargs)
 
@@ -402,7 +402,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             info = obj.makeTextInfo(textInfos.POSITION_SELECTION)
             if info and not info.isCollapsed:
                 text = info.text
-                self.translate_text(text, speak=True, copy=False)
+                self.translate_text(text, speak=True)
             else:
                 nvda_ui.message(_("No selection"))
         except Exception:
