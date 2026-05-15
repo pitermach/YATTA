@@ -1,3 +1,5 @@
+import addonHandler
+addonHandler.initTranslation()
 import config
 import globalPluginHandler
 import scriptHandler
@@ -380,7 +382,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                     self.bindGestures(self.__gestures)
         return wrapped_script
         
-    @scriptHandler.script(description="Translation Layer (Press S, T, C, or A)")
+    @scriptHandler.script(description=_("Translation Layer (Press S, T, C, or A)"))
     def script_layer(self, gesture):
         if self.toggling:
             import tones
@@ -392,7 +394,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         import tones
         tones.beep(200, 10)
         
-    @scriptHandler.script(description="Translate selection")
+    @scriptHandler.script(description=_("Translate selection"))
     def script_translateSelection(self, gesture):
         obj = api.getCaretObject()
         try:
@@ -402,11 +404,11 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                 text = info.text
                 self.translate_text(text, speak=True, copy=False)
             else:
-                nvda_ui.message("No selection")
+                nvda_ui.message(_("No selection"))
         except Exception:
-            nvda_ui.message("No selection")
+            nvda_ui.message(_("No selection"))
 
-    @scriptHandler.script(description="Translate selection in browseable message")
+    @scriptHandler.script(description=_("Translate selection in browseable message"))
     def script_translateSelectionBrowseable(self, gesture):
         obj = api.getCaretObject()
         try:
@@ -416,57 +418,57 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                 text = info.text
                 self.translate_text(text, speak=False, browseable=True)
             else:
-                nvda_ui.message("No selection")
+                nvda_ui.message(_("No selection"))
         except Exception:
-            nvda_ui.message("No selection")
+            nvda_ui.message(_("No selection"))
 
-    @scriptHandler.script(description="Translate last spoken phrase")
+    @scriptHandler.script(description=_("Translate last spoken phrase"))
     def script_translateLast(self, gesture):
         if self.last_spoken_text:
             self.translate_text(self.last_spoken_text, speak=True)
         else:
-            nvda_ui.message("No last phrase found")
+            nvda_ui.message(_("No last phrase found"))
 
-    @scriptHandler.script(description="Translate last spoken phrase in browseable message")
+    @scriptHandler.script(description=_("Translate last spoken phrase in browseable message"))
     def script_translateLastBrowseable(self, gesture):
         if self.last_spoken_text:
             self.translate_text(self.last_spoken_text, speak=False, browseable=True)
         else:
-            nvda_ui.message("No last phrase found")
+            nvda_ui.message(_("No last phrase found"))
 
-    @scriptHandler.script(description="Translate clipboard")
+    @scriptHandler.script(description=_("Translate clipboard"))
     def script_translateClipboard(self, gesture):
         text = api.getClipData()
         if text and isinstance(text, str) and not text.isspace():
             self.translate_text(text, speak=True)
         else:
-            nvda_ui.message("No text on clipboard")
+            nvda_ui.message(_("No text on clipboard"))
 
-    @scriptHandler.script(description="Translate clipboard in browseable message")
+    @scriptHandler.script(description=_("Translate clipboard in browseable message"))
     def script_translateClipboardBrowseable(self, gesture):
         text = api.getClipData()
         if text and isinstance(text, str) and not text.isspace():
             self.translate_text(text, speak=False, browseable=True)
         else:
-            nvda_ui.message("No text on clipboard")
+            nvda_ui.message(_("No text on clipboard"))
 
-    @scriptHandler.script(description="Toggle auto translate")
+    @scriptHandler.script(description=_("Toggle auto translate"))
     def script_toggleAuto(self, gesture):
         app = self._get_app_name()
         current_state = self._get_auto_translate_state(app)
         new_state = not current_state
         if new_state:
-            nvda_ui.message(f"Auto translate on for {app}")
+            nvda_ui.message(_("Auto translate on for {app}").format(app=app))
             self.auto_translate_apps[app] = new_state
         else:
             self.auto_translate_apps[app] = new_state
-            nvda_ui.message(f"Auto translate off for {app}")
+            nvda_ui.message(_("Auto translate off for {app}").format(app=app))
 
-    @scriptHandler.script(description="Open application settings")
+    @scriptHandler.script(description=_("Open application settings"))
     def script_appSettings(self, gesture):
         app = self._get_app_name()
         if not app:
-            nvda_ui.message("No application active")
+            nvda_ui.message(_("No application active"))
             return
         
         import wx
@@ -481,7 +483,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             
         wx.CallAfter(show_dialog)
 
-    @scriptHandler.script(description="Open cache editor")
+    @scriptHandler.script(description=_("Open cache editor"))
     def script_cacheEditor(self, gesture):
         app = self._get_app_name()
         
@@ -502,15 +504,15 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         wx.CallAfter(show_dialog)
 
     _layer_commands = [
-        ("s", "translateSelection", "Translate selection"),
-        ("shift+s", "translateSelectionBrowseable", "Translate selection in browseable message"),
-        ("t", "translateLast", "Translate last spoken phrase"),
-        ("shift+t", "translateLastBrowseable", "Translate last spoken phrase in browseable message"),
-        ("c", "translateClipboard", "Translate clipboard"),
-        ("shift+c", "translateClipboardBrowseable", "Translate clipboard in browseable message"),
-        ("a", "toggleAuto", "Toggle auto translate"),
-        ("o", "appSettings", "Open application settings"),
-        ("e", "cacheEditor", "Open cache editor"),
+        ("s", "translateSelection", _("Translate selection")),
+        ("shift+s", "translateSelectionBrowseable", _("Translate selection in browseable message")),
+        ("t", "translateLast", _("Translate last spoken phrase")),
+        ("shift+t", "translateLastBrowseable", _("Translate last spoken phrase in browseable message")),
+        ("c", "translateClipboard", _("Translate clipboard")),
+        ("shift+c", "translateClipboardBrowseable", _("Translate clipboard in browseable message")),
+        ("a", "toggleAuto", _("Toggle auto translate")),
+        ("o", "appSettings", _("Open application settings")),
+        ("e", "cacheEditor", _("Open cache editor")),
     ]
 
     @scriptHandler.script()

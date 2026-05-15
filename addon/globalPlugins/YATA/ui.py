@@ -29,15 +29,15 @@ def select_language_helper(parent, txtCtrl, service, conf_copy, is_source):
     langs = engine.get_supported_languages()
     if not langs:
         import ui as nvda_ui
-        nvda_ui.message("No languages found or failed to fetch.")
+        nvda_ui.message(_("No languages found or failed to fetch."))
         return
         
     choices = [f"{v} ({k})" for k, v in langs.items()]
     choices.sort()
     if is_source:
-        choices.insert(0, "Auto-detect (auto)")
+        choices.insert(0, _("Auto-detect (auto)"))
         
-    dlg = wx.SingleChoiceDialog(parent, "Select Language:", "Language", choices)
+    dlg = wx.SingleChoiceDialog(parent, _("Select Language:"), _("Language"), choices)
     if dlg.ShowModal() == wx.ID_OK:
         sel_str = dlg.GetStringSelection()
         code = sel_str.split("(")[-1].split(")")[0]
@@ -59,18 +59,18 @@ def load_default_prompt_helper(model, sysPromptCtrl, usrPromptCtrl):
                 sysPromptCtrl.SetValue(entry.get("system_prompt", ""))
                 usrPromptCtrl.SetValue(entry.get("user_prompt", ""))
                 import ui as nvda_ui
-                nvda_ui.message("Default prompt loaded.")
+                nvda_ui.message(_("Default prompt loaded."))
                 return
                 
         import ui as nvda_ui
-        nvda_ui.message(f"No default prompt found for model: {model}")
+        nvda_ui.message(_("No default prompt found for model: {model}").format(model=model))
     except Exception as e:
         import ui as nvda_ui
-        nvda_ui.message(f"Failed to load prompts: {e}")
+        nvda_ui.message(_("Failed to load prompts: {e}").format(e=e).format(e=e))
 
 class YATAAppDialog(wx.Dialog):
     def __init__(self, parent, app_name):
-        super().__init__(parent, title=f"YATA settings - {app_name}")
+        super().__init__(parent, title=_("YATA settings - {app_name}").format(app_name=app_name).format(app_name=app_name))
         self.app_name = app_name
         
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -97,13 +97,13 @@ class YATAAppDialog(wx.Dialog):
                 return self.app_conf[key]
             return self.global_conf.get(global_fallback, "")
 
-        self.sourceLang = sHelper.addLabeledControl("Source Language:", wx.TextCtrl, value=get_val("source_lang", "source_lang"))
-        self.btnSelectSource = wx.Button(self, label="Select Source Language...")
+        self.sourceLang = sHelper.addLabeledControl(_("Source Language:"), wx.TextCtrl, value=get_val("source_lang", "source_lang"))
+        self.btnSelectSource = wx.Button(self, label=_("Select Source Language..."))
         self.btnSelectSource.Bind(wx.EVT_BUTTON, lambda e: self.onSelectLanguage(self.sourceLang))
         sHelper.addItem(self.btnSelectSource)
         
-        self.targetLang = sHelper.addLabeledControl("Target Language:", wx.TextCtrl, value=get_val("target_lang", "target_lang"))
-        self.btnSelectTarget = wx.Button(self, label="Select Target Language...")
+        self.targetLang = sHelper.addLabeledControl(_("Target Language:"), wx.TextCtrl, value=get_val("target_lang", "target_lang"))
+        self.btnSelectTarget = wx.Button(self, label=_("Select Target Language..."))
         self.btnSelectTarget.Bind(wx.EVT_BUTTON, lambda e: self.onSelectLanguage(self.targetLang))
         sHelper.addItem(self.btnSelectTarget)
         
@@ -111,10 +111,10 @@ class YATAAppDialog(wx.Dialog):
         sys_prompt_val = get_val("system_prompt", f"{self.service}_system_prompt")
         usr_prompt_val = get_val("user_prompt", f"{self.service}_user_prompt")
         
-        self.sysPrompt = sHelper.addLabeledControl("System Prompt:", wx.TextCtrl, style=wx.TE_MULTILINE, value=sys_prompt_val)
-        self.usrPrompt = sHelper.addLabeledControl("User Prompt:", wx.TextCtrl, style=wx.TE_MULTILINE, value=usr_prompt_val)
+        self.sysPrompt = sHelper.addLabeledControl(_("System Prompt:"), wx.TextCtrl, style=wx.TE_MULTILINE, value=sys_prompt_val)
+        self.usrPrompt = sHelper.addLabeledControl(_("User Prompt:"), wx.TextCtrl, style=wx.TE_MULTILINE, value=usr_prompt_val)
         
-        self.btnLoadDefaultPrompt = wx.Button(self, label="Load Default Prompts")
+        self.btnLoadDefaultPrompt = wx.Button(self, label=_("Load Default Prompts"))
         self.btnLoadDefaultPrompt.Bind(wx.EVT_BUTTON, self.onLoadDefaultPrompt)
         sHelper.addItem(self.btnLoadDefaultPrompt)
         
@@ -123,17 +123,17 @@ class YATAAppDialog(wx.Dialog):
         self.saveCache.SetValue(save_cache_val)
         
         auto_trans_val = self.app_conf.get("auto_translate", "False").lower() == 'true'
-        self.autoTranslate = sHelper.addItem(wx.CheckBox(self, label="Enable automatic translation"))
+        self.autoTranslate = sHelper.addItem(wx.CheckBox(self, label=_("Enable automatic translation")))
         self.autoTranslate.SetValue(auto_trans_val)
         
         sep_num_val = self.app_conf.get("separate_numbers", str(self.global_conf.get("separate_numbers", False))).lower() == 'true'
-        self.separateNumbers = sHelper.addItem(wx.CheckBox(self, label="Separate numbers when translating"))
+        self.separateNumbers = sHelper.addItem(wx.CheckBox(self, label=_("Separate numbers when translating")))
         self.separateNumbers.SetValue(sep_num_val)
         
         # Buttons
         btnSizer = wx.StdDialogButtonSizer()
         
-        self.btnReset = wx.Button(self, label="Reset")
+        self.btnReset = wx.Button(self, label=_("Reset"))
         self.btnReset.Bind(wx.EVT_BUTTON, self.onReset)
         btnSizer.AddButton(self.btnReset)
         
@@ -165,7 +165,7 @@ class YATAAppDialog(wx.Dialog):
         
     def onReset(self, evt):
         import gui
-        if gui.messageBox("Are you sure you want to reset settings for this app?", "Confirm Reset", style=wx.YES_NO | wx.ICON_QUESTION) == wx.YES:
+        if gui.messageBox(_("Are you sure you want to reset settings for this app?"), _("Confirm Reset"), style=wx.YES_NO | wx.ICON_QUESTION) == wx.YES:
             import os
             if os.path.exists(self.filepath):
                 os.remove(self.filepath)
@@ -210,12 +210,12 @@ class YATASettingsPanel(SettingsPanel):
         
         # Languages
         self.sourceLang = sHelper.addLabeledControl("Source Language (e.g. 'auto', 'es'):", wx.TextCtrl, value=conf.get("source_lang", "auto"))
-        self.btnSelectSource = wx.Button(self, label="Select Source Language...")
+        self.btnSelectSource = wx.Button(self, label=_("Select Source Language..."))
         self.btnSelectSource.Bind(wx.EVT_BUTTON, lambda e: self.onSelectLanguage(self.sourceLang))
         sHelper.addItem(self.btnSelectSource)
         
         self.targetLang = sHelper.addLabeledControl("Target Language (e.g. 'en', 'fr'):", wx.TextCtrl, value=conf.get("target_lang", "en"))
-        self.btnSelectTarget = wx.Button(self, label="Select Target Language...")
+        self.btnSelectTarget = wx.Button(self, label=_("Select Target Language..."))
         self.btnSelectTarget.Bind(wx.EVT_BUTTON, lambda e: self.onSelectLanguage(self.targetLang))
         sHelper.addItem(self.btnSelectTarget)
         
@@ -223,7 +223,7 @@ class YATASettingsPanel(SettingsPanel):
         self.deeplPanel = wx.Panel(self)
         deeplSizer = wx.BoxSizer(wx.VERTICAL)
         deeplHelper = gui.guiHelper.BoxSizerHelper(self.deeplPanel, sizer=deeplSizer)
-        self.deeplKey = deeplHelper.addLabeledControl("DeepL API Key:", wx.TextCtrl, value=conf.get("deepl_key", ""))
+        self.deeplKey = deeplHelper.addLabeledControl(_("DeepL API Key:"), wx.TextCtrl, value=conf.get("deepl_key", ""))
         self.deeplPanel.SetSizer(deeplSizer)
         sHelper.addItem(self.deeplPanel)
         
@@ -234,14 +234,14 @@ class YATASettingsPanel(SettingsPanel):
         
         self.llmKey = llmHelper.addLabeledControl("API Key:", wx.TextCtrl, value="")
         self.llmAddress = llmHelper.addLabeledControl("Address / Base URL:", wx.TextCtrl, value="")
-        self.llmModel = llmHelper.addLabeledControl("Model:", wx.TextCtrl, value="")
-        self.btnSelectModel = wx.Button(self.llmPanel, label="Select Model...")
+        self.llmModel = llmHelper.addLabeledControl(_("Model:"), wx.TextCtrl, value="")
+        self.btnSelectModel = wx.Button(self.llmPanel, label=_("Select Model..."))
         self.btnSelectModel.Bind(wx.EVT_BUTTON, self.onSelectModel)
         llmHelper.addItem(self.btnSelectModel)
         
-        self.llmPrompt = llmHelper.addLabeledControl("System Prompt:", wx.TextCtrl, style=wx.TE_MULTILINE, value="")
-        self.llmUserPrompt = llmHelper.addLabeledControl("User Prompt:", wx.TextCtrl, style=wx.TE_MULTILINE, value="")
-        self.btnLoadDefaultPrompt = wx.Button(self.llmPanel, label="Load Default Prompts")
+        self.llmPrompt = llmHelper.addLabeledControl(_("System Prompt:"), wx.TextCtrl, style=wx.TE_MULTILINE, value="")
+        self.llmUserPrompt = llmHelper.addLabeledControl(_("User Prompt:"), wx.TextCtrl, style=wx.TE_MULTILINE, value="")
+        self.btnLoadDefaultPrompt = wx.Button(self.llmPanel, label=_("Load Default Prompts"))
         self.btnLoadDefaultPrompt.Bind(wx.EVT_BUTTON, self.onLoadDefaultPrompt)
         llmHelper.addItem(self.btnLoadDefaultPrompt)
         
@@ -249,10 +249,10 @@ class YATASettingsPanel(SettingsPanel):
         self.llmPanel.SetSizer(llmSizer)
         sHelper.addItem(self.llmPanel)
         
-        self.saveCache = sHelper.addItem(wx.CheckBox(self, label="Save cache to disk on exit"))
+        self.saveCache = sHelper.addItem(wx.CheckBox(self, label=_("Save cache to disk on exit")))
         self.saveCache.SetValue(conf.get("save_cache", True))
         
-        self.separateNumbers = sHelper.addItem(wx.CheckBox(self, label="Separate numbers when translating"))
+        self.separateNumbers = sHelper.addItem(wx.CheckBox(self, label=_("Separate numbers when translating")))
         self.separateNumbers.SetValue(conf.get("separate_numbers", False))
         
         self._current_service = current_service
@@ -349,7 +349,7 @@ class YATASettingsPanel(SettingsPanel):
                     models = [m['name'].split('/')[-1] for m in res.get('models', []) if 'generateContent' in m.get('supportedGenerationMethods', [])]
         except Exception as e:
             import ui
-            ui.message(f"Failed to fetch models: {e}")
+            ui.message(f_("Failed to fetch models: {e}").format(e=e))
             return
             
         if not models:
@@ -357,7 +357,7 @@ class YATASettingsPanel(SettingsPanel):
             ui.message("No models found.")
             return
             
-        dlg = wx.SingleChoiceDialog(self, "Select Model:", f"{sel.capitalize()} Models", models)
+        dlg = wx.SingleChoiceDialog(self, _("Select Model:"), f"{sel.capitalize()} Models", models)
         if dlg.ShowModal() == wx.ID_OK:
             self.llmModel.SetValue(dlg.GetStringSelection())
         dlg.Destroy()
@@ -372,10 +372,10 @@ class CacheEntryDialog(wx.Dialog):
         import gui
         sHelper = gui.guiHelper.BoxSizerHelper(self, sizer=mainSizer)
         
-        self.sourceCtrl = sHelper.addLabeledControl("Source text:", wx.TextCtrl, value=source)
+        self.sourceCtrl = sHelper.addLabeledControl(_("Source text:"), wx.TextCtrl, value=source)
         self.transCtrl = sHelper.addLabeledControl("Translation:", wx.TextCtrl, value=translation)
         
-        self.regexpChk = sHelper.addItem(wx.CheckBox(self, label="Is Regular Expression"))
+        self.regexpChk = sHelper.addItem(wx.CheckBox(self, label=_("Is Regular Expression")))
         self.regexpChk.SetValue(is_regexp)
         
         btnSizer = wx.StdDialogButtonSizer()
@@ -401,7 +401,7 @@ class CacheEntryDialog(wx.Dialog):
                 prog = re.compile(source)
             except Exception as e:
                 import gui
-                gui.messageBox(f"Invalid regular expression:\n{e}", "Error", style=wx.OK | wx.ICON_ERROR)
+                gui.messageBox(f_("Invalid regular expression:\n{e}"), _("Error"), style=wx.OK | wx.ICON_ERROR)
                 return
                 
             groups = prog.groups
@@ -416,7 +416,7 @@ class CacheEntryDialog(wx.Dialog):
                             idx = int(field_name[1:])
                             if idx < 1 or idx > groups:
                                 import gui
-                                gui.messageBox(f"Token {{{field_name}}} refers to group {idx}, but the regex only has {groups} capture groups.", "Error", style=wx.OK | wx.ICON_ERROR)
+                                gui.messageBox(_("Token {{{field_name}}} refers to group {idx}, but the regex only has {groups} capture groups.").format(field_name=field_name, idx=idx, groups=groups), _("Error"), style=wx.OK | wx.ICON_ERROR)
                                 return
                         except ValueError:
                             pass
@@ -431,7 +431,7 @@ class CacheEntryDialog(wx.Dialog):
 
 class CacheEditorDialog(wx.Dialog):
     def __init__(self, parent, app_name, target_lang):
-        super().__init__(parent, title=f"Cache Editor - {app_name} ({target_lang})", size=(600, 400))
+        super().__init__(parent, title=_("Cache Editor - {app_name} ({target_lang})").format(app_name=app_name, target_lang=target_lang).format(app_name=app_name, target_lang=target_lang), size=(600, 400))
         self.app_name = app_name
         self.target_lang = target_lang
         
@@ -441,28 +441,28 @@ class CacheEditorDialog(wx.Dialog):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         
         self.listCtrl = wx.ListCtrl(self, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.BORDER_SUNKEN)
-        self.listCtrl.InsertColumn(0, "Source text", width=200)
-        self.listCtrl.InsertColumn(1, "Translation", width=200)
-        self.listCtrl.InsertColumn(2, "Is Regex", width=100)
+        self.listCtrl.InsertColumn(0, _("Source text"), width=200)
+        self.listCtrl.InsertColumn(1, _("Translation"), width=200)
+        self.listCtrl.InsertColumn(2, _("Is Regex"), width=100)
         
         self.refresh_list()
         mainSizer.Add(self.listCtrl, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
         
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
         
-        btnAdd = wx.Button(self, label="&Add")
+        btnAdd = wx.Button(self, label=_("&Add"))
         btnAdd.Bind(wx.EVT_BUTTON, self.onAdd)
         btnSizer.Add(btnAdd, flag=wx.RIGHT, border=5)
         
-        btnEdit = wx.Button(self, label="&Edit")
+        btnEdit = wx.Button(self, label=_("&Edit"))
         btnEdit.Bind(wx.EVT_BUTTON, self.onEdit)
         btnSizer.Add(btnEdit, flag=wx.RIGHT, border=5)
         
-        btnDelete = wx.Button(self, label="&Delete")
+        btnDelete = wx.Button(self, label=_("&Delete"))
         btnDelete.Bind(wx.EVT_BUTTON, self.onDelete)
         btnSizer.Add(btnDelete, flag=wx.RIGHT, border=5)
         
-        btnClear = wx.Button(self, label="&Clear Cache")
+        btnClear = wx.Button(self, label=_("&Clear Cache"))
         btnClear.Bind(wx.EVT_BUTTON, self.onClear)
         btnSizer.Add(btnClear)
         
@@ -488,10 +488,10 @@ class CacheEditorDialog(wx.Dialog):
         for i, entry in enumerate(self.entries):
             idx = self.listCtrl.InsertItem(i, entry.get("source", ""))
             self.listCtrl.SetItem(idx, 1, entry.get("translation", ""))
-            self.listCtrl.SetItem(idx, 2, "Yes" if entry.get("is_regexp") else "No")
+            self.listCtrl.SetItem(idx, 2, _("Yes") if entry.get("is_regexp") else _("No"))
             
     def onAdd(self, evt):
-        dlg = CacheEntryDialog(self, "Add Cache Entry")
+        dlg = CacheEntryDialog(self, _("Add Cache Entry"))
         if dlg.ShowModal() == wx.ID_OK:
             self.entries.append(dlg.get_data())
             self.refresh_list()
@@ -501,7 +501,7 @@ class CacheEditorDialog(wx.Dialog):
         idx = self.listCtrl.GetFirstSelected()
         if idx < 0: return
         entry = self.entries[idx]
-        dlg = CacheEntryDialog(self, "Edit Cache Entry", source=entry.get("source", ""), translation=entry.get("translation", ""), is_regexp=entry.get("is_regexp", False))
+        dlg = CacheEntryDialog(self, _("Edit Cache Entry"), source=entry.get("source", ""), translation=entry.get("translation", ""), is_regexp=entry.get("is_regexp", False))
         if dlg.ShowModal() == wx.ID_OK:
             self.entries[idx] = dlg.get_data()
             self.refresh_list()
@@ -515,7 +515,7 @@ class CacheEditorDialog(wx.Dialog):
         
     def onClear(self, evt):
         import gui
-        if gui.messageBox("Are you sure you want to clear the entire cache for this app?", "Clear Cache", style=wx.YES_NO | wx.ICON_QUESTION) == wx.YES:
+        if gui.messageBox(_("Are you sure you want to clear the entire cache for this app?"), _("Clear Cache"), style=wx.YES_NO | wx.ICON_QUESTION) == wx.YES:
             from . import cache
             cache.clear_app_cache(self.app_name)
             self.entries = []
