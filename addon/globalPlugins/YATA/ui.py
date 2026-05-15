@@ -120,7 +120,7 @@ class YATAAppDialog(wx.Dialog):
         sHelper.addItem(self.btnLoadDefaultPrompt)
         
         save_cache_val = self.app_conf.get("save_cache", str(self.global_conf.get("save_cache", True))).lower() == 'true'
-        self.saveCache = sHelper.addItem(wx.CheckBox(self, label="Save cache to disk"))
+        self.saveCache = sHelper.addItem(wx.CheckBox(self, label=_("Save cache to disk")))
         self.saveCache.SetValue(save_cache_val)
         
         auto_trans_val = self.app_conf.get("auto_translate", "False").lower() == 'true'
