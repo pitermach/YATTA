@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: 'YATA' '1.0'\n"
 "Report-Msgid-Bugs-To: 'nvda-translations@groups.io'\n"
 "POT-Creation-Date: 2026-05-15 20:46+0200\n"
-"PO-Revision-Date: 2026-05-15 20:47+0200\n"
+"PO-Revision-Date: 2026-05-15 20:53+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: pl\n"
@@ -82,10 +82,8 @@ msgid "Load Default Prompts"
 msgstr "Wczytaj Domyślne Prompty"
 
 #: addon\globalPlugins\YATA\ui.py:123
-#, fuzzy
-#| msgid "Save cache to disk on exit"
 msgid "Save cache to disk"
-msgstr "Zapisuj pamięć na dysku przy wychodzeniu"
+msgstr "Zapisuj pamięć na dysku"
 
 #: addon\globalPlugins\YATA\ui.py:127
 msgid "Enable automatic translation"
