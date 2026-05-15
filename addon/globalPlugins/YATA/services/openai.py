@@ -47,7 +47,7 @@ class OpenAITranslate(TranslationEngine):
             raise Exception("OpenAI API key not configured.")
             
         address = self.config.get("openai_address", "https://api.openai.com/v1").rstrip("/")
-        model = self.config.get("openai_model", "gpt-4o-mini")
+        model = self.config.get("openai_model", "gpt-5.4-mini")
         system_prompt = self.config.get("openai_system_prompt", "You are an expert translator.")
         user_prompt = self.config.get("openai_user_prompt", "{TEXT}")
         
