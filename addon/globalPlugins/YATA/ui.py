@@ -2,7 +2,8 @@ import wx
 import gui
 from gui.settingsDialogs import SettingsPanel
 import config
-
+import addonHandler
+addonHandler.initTranslation()
 
 def select_language_helper(parent, txtCtrl, service, conf_copy, is_source):
     import core
@@ -199,7 +200,7 @@ class YATASettingsPanel(SettingsPanel):
         conf = config.conf["YATA"]
         
         # Service Selection
-        self.serviceChoice = sHelper.addLabeledControl("Translation Service:", wx.Choice, choices=self.serviceNames)
+        self.serviceChoice = sHelper.addLabeledControl(_("Translation Service:"), wx.Choice, choices=self.serviceNames)
         current_service = conf.get("service", "google")
         try:
             self.serviceChoice.SetSelection(self.serviceList.index(current_service))
@@ -209,12 +210,12 @@ class YATASettingsPanel(SettingsPanel):
         self.serviceChoice.Bind(wx.EVT_CHOICE, self.onServiceChange)
         
         # Languages
-        self.sourceLang = sHelper.addLabeledControl("Source Language (e.g. 'auto', 'es'):", wx.TextCtrl, value=conf.get("source_lang", "auto"))
+        self.sourceLang = sHelper.addLabeledControl(_("Source Language (e.g. 'auto', 'es'):"), wx.TextCtrl, value=conf.get("source_lang", "auto"))
         self.btnSelectSource = wx.Button(self, label=_("Select Source Language..."))
         self.btnSelectSource.Bind(wx.EVT_BUTTON, lambda e: self.onSelectLanguage(self.sourceLang))
         sHelper.addItem(self.btnSelectSource)
         
-        self.targetLang = sHelper.addLabeledControl("Target Language (e.g. 'en', 'fr'):", wx.TextCtrl, value=conf.get("target_lang", "en"))
+        self.targetLang = sHelper.addLabeledControl(_("Target Language (e.g. 'en', 'fr'):"), wx.TextCtrl, value=conf.get("target_lang", "en"))
         self.btnSelectTarget = wx.Button(self, label=_("Select Target Language..."))
         self.btnSelectTarget.Bind(wx.EVT_BUTTON, lambda e: self.onSelectLanguage(self.targetLang))
         sHelper.addItem(self.btnSelectTarget)
@@ -232,8 +233,8 @@ class YATASettingsPanel(SettingsPanel):
         llmSizer = wx.BoxSizer(wx.VERTICAL)
         llmHelper = gui.guiHelper.BoxSizerHelper(self.llmPanel, sizer=llmSizer)
         
-        self.llmKey = llmHelper.addLabeledControl("API Key:", wx.TextCtrl, value="")
-        self.llmAddress = llmHelper.addLabeledControl("Address / Base URL:", wx.TextCtrl, value="")
+        self.llmKey = llmHelper.addLabeledControl(_("API Key:"), wx.TextCtrl, value="")
+        self.llmAddress = llmHelper.addLabeledControl(_("Address / Base URL:"), wx.TextCtrl, value="")
         self.llmModel = llmHelper.addLabeledControl(_("Model:"), wx.TextCtrl, value="")
         self.btnSelectModel = wx.Button(self.llmPanel, label=_("Select Model..."))
         self.btnSelectModel.Bind(wx.EVT_BUTTON, self.onSelectModel)
@@ -245,7 +246,7 @@ class YATASettingsPanel(SettingsPanel):
         self.btnLoadDefaultPrompt.Bind(wx.EVT_BUTTON, self.onLoadDefaultPrompt)
         llmHelper.addItem(self.btnLoadDefaultPrompt)
         
-        self.llmStream = llmHelper.addItem(wx.CheckBox(self.llmPanel, label="Stream responses"))
+        self.llmStream = llmHelper.addItem(wx.CheckBox(self.llmPanel, label=_("Stream responses")))
         self.llmPanel.SetSizer(llmSizer)
         sHelper.addItem(self.llmPanel)
         
