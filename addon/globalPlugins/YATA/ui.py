@@ -109,15 +109,16 @@ class YATAAppDialog(wx.Dialog):
         sHelper.addItem(self.btnSelectTarget)
         
         # Prompts
-        sys_prompt_val = get_val("system_prompt", f"{self.service}_system_prompt")
-        usr_prompt_val = get_val("user_prompt", f"{self.service}_user_prompt")
-        
-        self.sysPrompt = sHelper.addLabeledControl(_("System Prompt:"), wx.TextCtrl, style=wx.TE_MULTILINE, value=sys_prompt_val)
-        self.usrPrompt = sHelper.addLabeledControl(_("User Prompt:"), wx.TextCtrl, style=wx.TE_MULTILINE, value=usr_prompt_val)
-        
-        self.btnLoadDefaultPrompt = wx.Button(self, label=_("Load Default Prompts"))
-        self.btnLoadDefaultPrompt.Bind(wx.EVT_BUTTON, self.onLoadDefaultPrompt)
-        sHelper.addItem(self.btnLoadDefaultPrompt)
+        if self.service in ("ollama", "openai", "gemini"):
+            sys_prompt_val = get_val("system_prompt", f"{self.service}_system_prompt")
+            usr_prompt_val = get_val("user_prompt", f"{self.service}_user_prompt")
+            
+            self.sysPrompt = sHelper.addLabeledControl(_("System Prompt:"), wx.TextCtrl, style=wx.TE_MULTILINE, value=sys_prompt_val)
+            self.usrPrompt = sHelper.addLabeledControl(_("User Prompt:"), wx.TextCtrl, style=wx.TE_MULTILINE, value=usr_prompt_val)
+            
+            self.btnLoadDefaultPrompt = wx.Button(self, label=_("Load Default Prompts"))
+            self.btnLoadDefaultPrompt.Bind(wx.EVT_BUTTON, self.onLoadDefaultPrompt)
+            sHelper.addItem(self.btnLoadDefaultPrompt)
         
         save_cache_val = self.app_conf.get("save_cache", str(self.global_conf.get("save_cache", True))).lower() == 'true'
         self.saveCache = sHelper.addItem(wx.CheckBox(self, label=_("Save cache to disk")))
@@ -175,8 +176,9 @@ class YATAAppDialog(wx.Dialog):
     def onOK(self, evt):
         self.app_conf["source_lang"] = self.sourceLang.GetValue()
         self.app_conf["target_lang"] = self.targetLang.GetValue()
-        self.app_conf["system_prompt"] = self.sysPrompt.GetValue()
-        self.app_conf["user_prompt"] = self.usrPrompt.GetValue()
+        if hasattr(self, "sysPrompt"):
+            self.app_conf["system_prompt"] = self.sysPrompt.GetValue()
+            self.app_conf["user_prompt"] = self.usrPrompt.GetValue()
         self.app_conf["save_cache"] = str(self.saveCache.GetValue())
         self.app_conf["auto_translate"] = str(self.autoTranslate.GetValue())
         self.app_conf["separate_numbers"] = str(self.separateNumbers.GetValue())
