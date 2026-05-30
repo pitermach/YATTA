@@ -207,6 +207,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                         
                     res = engine.translate(s, source_lang, target_lang, stream=False)
                     res_str = res if isinstance(res, str) else "".join(res)
+                    res_str = re.sub(r"<token\d+>", "", res_str)
                     cache.set_translation(app, target_lang, s, res_str, is_regexp=False)
                     return res_str
                 
@@ -288,6 +289,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                 # Normal translation
                 res = engine.translate(text, source_lang, target_lang, stream=stream_ollama)
                 if isinstance(res, str):
+                    res = re.sub(r"<token\d+>", "", res)
                     if request_cancel_event.is_set(): return
                     cache.set_translation(app, target_lang, text, res, is_regexp=False)
                     if speak: speak_chunk(res)
@@ -299,6 +301,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                     def emit_buffer():
                         if sentence_buffer:
                             msg = "".join(sentence_buffer).strip()
+                            msg = re.sub(r"<token\d+>", "", msg)
                             if msg:
                                 speak_chunk(msg)
                             sentence_buffer.clear()
@@ -318,6 +321,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                         emit_buffer()
                     
                     final_text = "".join(full_text)
+                    final_text = re.sub(r"<token\d+>", "", final_text)
                     if not request_cancel_event.is_set():
                         cache.set_translation(app, target_lang, text, final_text, is_regexp=False)
                         if browseable: queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, final_text, "YATA Translation")
