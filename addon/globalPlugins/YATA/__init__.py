@@ -186,10 +186,14 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         
         cached = cache.get_translation(app, target_lang, text)
         
+        import time
+        last_activity_time = [time.time()]
+        translation_done = [False]
         request_cancel_event = threading.Event()
         self._translation_cancel_events.add(request_cancel_event)
 
         def speak_chunk(chunk):
+            last_activity_time[0] = time.time()
             def do_speak():
                 if request_cancel_event.is_set(): return
                 self.speaking_translation = True
@@ -208,10 +212,6 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             return self.get_engine(conf_copy)
 
         def do_translate():
-            import time
-            last_activity_time = [time.time()]
-            translation_done = [False]
-            
             def beep_loop():
                 import tones
                 while not translation_done[0] and not request_cancel_event.is_set():
