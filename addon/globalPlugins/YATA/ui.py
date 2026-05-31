@@ -334,7 +334,10 @@ class YATASettingsPanel(SettingsPanel):
         self.separateNumbers.SetValue(conf.get("separate_numbers", False))
         
         self.playSound = sHelper.addItem(wx.CheckBox(self, label=_("Play sound during longer operations")))
-        self.playSound.SetValue(conf.get("play_sound", True))
+        play_sound_val = conf.get("play_sound", True)
+        if isinstance(play_sound_val, str):
+            play_sound_val = play_sound_val.lower() == 'true'
+        self.playSound.SetValue(play_sound_val)
         
         self._current_service = current_service
         self._loadLLMConfig(self._current_service)

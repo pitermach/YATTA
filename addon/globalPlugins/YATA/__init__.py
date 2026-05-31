@@ -50,7 +50,8 @@ confspec = {
     "gemini_user_prompt": "string(default='{TEXT}')",
     "gemini_stream": "boolean(default=True)",
     "save_cache": "boolean(default=True)",
-    "separate_numbers": "boolean(default=False)"
+    "separate_numbers": "boolean(default=False)",
+    "play_sound": "boolean(default=True)"
 }
 config.conf.spec["YATA"] = confspec
 
