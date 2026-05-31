@@ -190,6 +190,10 @@ class YATAAppDialog(wx.Dialog):
         auto_trans_val = self.app_conf.get("auto_translate", "False").lower() == 'true'
         self.autoTranslate = sHelper.addItem(wx.CheckBox(self, label=_("Enable automatic translation")))
         self.autoTranslate.SetValue(auto_trans_val)
+        play_sound_val = self.app_conf.get("play_sound", str(self.global_conf.get("play_sound", True))).lower() == 'true'
+        self.playSound = sHelper.addItem(wx.CheckBox(self, label=_("Play sound during longer operations")))
+        self.playSound.SetValue(play_sound_val)
+
         
         sep_num_val = self.app_conf.get("separate_numbers", str(self.global_conf.get("separate_numbers", False))).lower() == 'true'
         self.separateNumbers = sHelper.addItem(wx.CheckBox(self, label=_("Separate numbers when translating")))
@@ -251,6 +255,7 @@ class YATAAppDialog(wx.Dialog):
             self.app_conf["user_prompt"] = self.usrPrompt.GetValue()
         self.app_conf["save_cache"] = str(self.saveCache.GetValue())
         self.app_conf["auto_translate"] = str(self.autoTranslate.GetValue())
+        self.app_conf["play_sound"] = str(self.playSound.GetValue())
         self.app_conf["separate_numbers"] = str(self.separateNumbers.GetValue())
         
         self.app_conf.filename = self.filepath

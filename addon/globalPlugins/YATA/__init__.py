@@ -195,6 +195,21 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             return self.get_engine(conf_copy)
 
         def do_translate():
+            import time
+            last_activity_time = [time.time()]
+            translation_done = [False]
+            
+            def beep_loop():
+                import tones
+                while not translation_done[0] and not request_cancel_event.is_set():
+                    if time.time() - last_activity_time[0] >= 2.0:
+                        tones.beep(2000, 10)
+                        last_activity_time[0] = time.time()
+                    time.sleep(0.1)
+
+            if self._get_play_sound_state(app):
+                threading.Thread(target=beep_loop, daemon=True).start()
+
             try:
                 engine = get_engine_with_prompts()
                 
@@ -330,6 +345,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                 if not request_cancel_event.is_set():
                     queueHandler.queueFunction(queueHandler.eventQueue, speak_chunk, f"Error: {e}")
             finally:
+                translation_done[0] = True
                 self._translation_cancel_events.discard(request_cancel_event)
 
         threading.Thread(target=do_translate).start()
