@@ -84,6 +84,12 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             logHandler.log.warning(f"YATA: Failed to register speech.speechCanceled: {e}")
             
         self.last_spoken_text = ""
+        
+        import queue
+        import threading
+        self._translation_queue = queue.Queue()
+        self._translation_worker_thread = threading.Thread(target=self._translation_worker, daemon=True)
+        self._translation_worker_thread.start()
 
     def _translation_worker(self):
         while True:
