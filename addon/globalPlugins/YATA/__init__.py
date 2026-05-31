@@ -123,6 +123,19 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                 pass
         return default_val
 
+    def _get_play_sound_state(self, app):
+        conf = config.conf["YATA"]
+        if not app:
+            return conf.get("play_sound", True)
+        
+        import os, configobj, globalVars
+        filepath = os.path.join(globalVars.appArgs.configPath, "YATA", "settings", f"{app}.ini")
+        if os.path.exists(filepath):
+            app_conf = configobj.ConfigObj(filepath)
+            if "play_sound" in app_conf:
+                return app_conf["play_sound"].lower() == 'true'
+        return conf.get("play_sound", True)
+
     def _get_auto_translate_state(self, app):
         if app in getattr(self, 'auto_translate_apps', {}):
             return self.auto_translate_apps[app]
