@@ -5,7 +5,64 @@ import config
 import addonHandler
 addonHandler.initTranslation()
 
-def select_language_helper(parent, txtCtrl, service, conf_copy, is_source):
+
+class LanguageSelectionDialog(wx.Dialog):
+    def __init__(self, parent, title, choices, langs_dict, service):
+        super().__init__(parent, title=title)
+        self.langs_dict = langs_dict
+        self.service = service
+        self.selected_code = None
+        
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        
+        label = wx.StaticText(self, label=_("Language:"))
+        mainSizer.Add(label, 0, wx.ALL, 5)
+        
+        self.combo = wx.ComboBox(self, choices=choices, style=wx.CB_DROPDOWN)
+        mainSizer.Add(self.combo, 0, wx.EXPAND | wx.ALL, 5)
+        
+        btnSizer = wx.StdDialogButtonSizer()
+        btnOK = wx.Button(self, wx.ID_OK)
+        btnOK.SetDefault()
+        btnSizer.AddButton(btnOK)
+        btnCancel = wx.Button(self, wx.ID_CANCEL)
+        btnSizer.AddButton(btnCancel)
+        btnSizer.Realize()
+        
+        mainSizer.Add(btnSizer, 0, wx.EXPAND | wx.ALL, 5)
+        
+        self.Bind(wx.EVT_BUTTON, self.onOK, id=wx.ID_OK)
+        
+        self.SetSizer(mainSizer)
+        mainSizer.Fit(self)
+        
+    def onOK(self, evt):
+        val = self.combo.GetValue().strip()
+        if not val:
+            evt.Skip()
+            return
+            
+        code = val
+        if "(" in val and ")" in val:
+            code = val.split("(")[-1].split(")")[0].strip()
+            
+        for k, v in self.langs_dict.items():
+            if v.lower() == val.lower():
+                code = k
+                break
+                
+        if self.service not in ("ollama", "openai", "gemini"):
+            if code.lower() == "auto":
+                pass
+            elif code not in self.langs_dict:
+                import gui
+                gui.messageBox(_("Invalid language selected. Please choose a supported language from the list or enter a valid code."), _("Error"), style=wx.OK | wx.ICON_ERROR, parent=self)
+                return
+                
+        self.selected_code = code
+        self.EndModal(wx.ID_OK)
+
+def select_language_helper(parent, current_code, service, conf_copy, is_source):
     import core
     engine = None
     if service == "bing":
@@ -31,19 +88,25 @@ def select_language_helper(parent, txtCtrl, service, conf_copy, is_source):
     if not langs:
         import ui as nvda_ui
         nvda_ui.message(_("No languages found or failed to fetch."))
-        return
+        return None
         
     choices = [f"{v} ({k})" for k, v in langs.items()]
     choices.sort()
     if is_source:
         choices.insert(0, _("Auto-detect (auto)"))
         
-    dlg = wx.SingleChoiceDialog(parent, _("Select Language:"), _("Language"), choices)
-    if dlg.ShowModal() == wx.ID_OK:
-        sel_str = dlg.GetStringSelection()
-        code = sel_str.split("(")[-1].split(")")[0]
-        txtCtrl.SetValue(code)
+    dlg = LanguageSelectionDialog(parent, _("Select Language:"), choices, langs, service)
+    if current_code.lower() == "auto" and is_source:
+        dlg.combo.SetValue(_("Auto-detect (auto)"))
+    elif current_code in langs:
+        dlg.combo.SetValue(f"{langs[current_code]} ({current_code})")
+    else:
+        dlg.combo.SetValue(current_code)
+        
+    res = dlg.ShowModal()
+    code = dlg.selected_code if res == wx.ID_OK else None
     dlg.Destroy()
+    return code
 
 def load_default_prompt_helper(model, sysPromptCtrl, usrPromptCtrl):
     import os
@@ -98,14 +161,14 @@ class YATAAppDialog(wx.Dialog):
                 return self.app_conf[key]
             return self.global_conf.get(global_fallback, "")
 
-        self.sourceLang = sHelper.addLabeledControl(_("Source Language:"), wx.TextCtrl, value=get_val("source_lang", "source_lang"))
-        self.btnSelectSource = wx.Button(self, label=_("Select Source Language..."))
-        self.btnSelectSource.Bind(wx.EVT_BUTTON, lambda e: self.onSelectLanguage(self.sourceLang))
+        self.sourceLangCode = get_val("source_lang", "source_lang")
+        self.btnSelectSource = wx.Button(self, label=_("&Source Language: {lang}").format(lang=self.sourceLangCode))
+        self.btnSelectSource.Bind(wx.EVT_BUTTON, lambda e: self.onSelectLanguage(True))
         sHelper.addItem(self.btnSelectSource)
         
-        self.targetLang = sHelper.addLabeledControl(_("Target Language:"), wx.TextCtrl, value=get_val("target_lang", "target_lang"))
-        self.btnSelectTarget = wx.Button(self, label=_("Select Target Language..."))
-        self.btnSelectTarget.Bind(wx.EVT_BUTTON, lambda e: self.onSelectLanguage(self.targetLang))
+        self.targetLangCode = get_val("target_lang", "target_lang")
+        self.btnSelectTarget = wx.Button(self, label=_("&Target Language: {lang}").format(lang=self.targetLangCode))
+        self.btnSelectTarget.Bind(wx.EVT_BUTTON, lambda e: self.onSelectLanguage(False))
         sHelper.addItem(self.btnSelectTarget)
         
         # Prompts
@@ -156,10 +219,17 @@ class YATAAppDialog(wx.Dialog):
         self.SetSizer(mainSizer)
         mainSizer.Fit(self)
         
-    def onSelectLanguage(self, txtCtrl):
+    def onSelectLanguage(self, is_source):
         conf_copy = self.global_conf.copy()
-        is_source = (txtCtrl == self.sourceLang)
-        select_language_helper(self, txtCtrl, self.service, conf_copy, is_source)
+        current = self.sourceLangCode if is_source else self.targetLangCode
+        res = select_language_helper(self, current, self.service, conf_copy, is_source)
+        if res is not None:
+            if is_source:
+                self.sourceLangCode = res
+                self.btnSelectSource.SetLabel(_("&Source Language: {lang}").format(lang=res))
+            else:
+                self.targetLangCode = res
+                self.btnSelectTarget.SetLabel(_("&Target Language: {lang}").format(lang=res))
         
     def onLoadDefaultPrompt(self, evt):
         model = self.global_conf.get(f"{self.service}_model", "")
@@ -174,8 +244,8 @@ class YATAAppDialog(wx.Dialog):
             self.Destroy()
             
     def onOK(self, evt):
-        self.app_conf["source_lang"] = self.sourceLang.GetValue()
-        self.app_conf["target_lang"] = self.targetLang.GetValue()
+        self.app_conf["source_lang"] = self.sourceLangCode
+        self.app_conf["target_lang"] = self.targetLangCode
         if hasattr(self, "sysPrompt"):
             self.app_conf["system_prompt"] = self.sysPrompt.GetValue()
             self.app_conf["user_prompt"] = self.usrPrompt.GetValue()
@@ -212,14 +282,14 @@ class YATASettingsPanel(SettingsPanel):
         self.serviceChoice.Bind(wx.EVT_CHOICE, self.onServiceChange)
         
         # Languages
-        self.sourceLang = sHelper.addLabeledControl(_("Source Language (e.g. 'auto', 'es'):"), wx.TextCtrl, value=conf.get("source_lang", "auto"))
-        self.btnSelectSource = wx.Button(self, label=_("Select Source Language..."))
-        self.btnSelectSource.Bind(wx.EVT_BUTTON, lambda e: self.onSelectLanguage(self.sourceLang))
+        self.sourceLangCode = conf.get("source_lang", "auto")
+        self.btnSelectSource = wx.Button(self, label=_("&Source Language: {lang}").format(lang=self.sourceLangCode))
+        self.btnSelectSource.Bind(wx.EVT_BUTTON, lambda e: self.onSelectLanguage(True))
         sHelper.addItem(self.btnSelectSource)
         
-        self.targetLang = sHelper.addLabeledControl(_("Target Language (e.g. 'en', 'fr'):"), wx.TextCtrl, value=conf.get("target_lang", "en"))
-        self.btnSelectTarget = wx.Button(self, label=_("Select Target Language..."))
-        self.btnSelectTarget.Bind(wx.EVT_BUTTON, lambda e: self.onSelectLanguage(self.targetLang))
+        self.targetLangCode = conf.get("target_lang", "en")
+        self.btnSelectTarget = wx.Button(self, label=_("&Target Language: {lang}").format(lang=self.targetLangCode))
+        self.btnSelectTarget.Bind(wx.EVT_BUTTON, lambda e: self.onSelectLanguage(False))
         sHelper.addItem(self.btnSelectTarget)
         
         # DeepL settings
@@ -307,8 +377,8 @@ class YATASettingsPanel(SettingsPanel):
     def onSave(self):
         conf = config.conf["YATA"]
         conf["service"] = self.serviceList[self.serviceChoice.GetSelection()]
-        conf["source_lang"] = self.sourceLang.GetValue()
-        conf["target_lang"] = self.targetLang.GetValue()
+        conf["source_lang"] = self.sourceLangCode
+        conf["target_lang"] = self.targetLangCode
         conf["deepl_key"] = self.deeplKey.GetValue()
         conf["save_cache"] = self.saveCache.GetValue()
         conf["separate_numbers"] = self.separateNumbers.GetValue()
