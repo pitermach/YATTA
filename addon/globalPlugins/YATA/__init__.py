@@ -85,6 +85,18 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             
         self.last_spoken_text = ""
 
+    def _translation_worker(self):
+        while True:
+            job = self._translation_queue.get()
+            if job is None:
+                break
+            try:
+                job()
+            except Exception as e:
+                logHandler.log.error(f"YATA: Background translation failed: {e}")
+            finally:
+                self._translation_queue.task_done()
+
     def terminate(self):
         if config.conf["YATA"].get("save_cache", True):
             cache.save()
@@ -363,7 +375,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                 translation_done[0] = True
                 self._translation_cancel_events.discard(request_cancel_event)
 
-        threading.Thread(target=do_translate).start()
+        self._translation_queue.put(do_translate)
         return True
 
     def _hook_speak(self, speechSequence, *args, **kwargs):
