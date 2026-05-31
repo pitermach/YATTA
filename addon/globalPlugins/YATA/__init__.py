@@ -173,7 +173,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         stripped = text.strip()
         if len(stripped) <= 1:
             return False
-        if stripped.isdigit():
+        import re
+        if re.fullmatch(r'-?\d+(?:[.,/]\d+)*', stripped):
             return False
 
         app = self._get_app_name()
@@ -276,7 +277,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                 import re
                 parts = []
                 if separate_numbers:
-                    parts = re.split(r'([\d/]+)', text)
+                    parts = re.split(r'(-?\d+(?:[.,/]\d+)*)', text)
                 
                 if separate_numbers and len(parts) > 1:
                     # We have numbers. Build tokenized string
@@ -284,9 +285,9 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                     regex_source = "^"
                     match_idx = 1
                     for part in parts:
-                        if re.match(r'^[\d/]+$', part):
+                        if re.fullmatch(r'-?\d+(?:[.,/]\d+)*', part):
                             tokenized_str += f"<token{match_idx}>"
-                            regex_source += r"([\d/]+)"
+                            regex_source += r"(-?\d+(?:[.,/]\d+)*)"
                             match_idx += 1
                         else:
                             tokenized_str += part
