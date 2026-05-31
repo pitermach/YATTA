@@ -384,13 +384,20 @@ class YATASettingsPanel(SettingsPanel):
         conf["separate_numbers"] = self.separateNumbers.GetValue()
         self._saveLLMConfig(self._current_service)
 
-    def onSelectLanguage(self, txtCtrl):
+    def onSelectLanguage(self, is_source):
         sel = self.serviceList[self.serviceChoice.GetSelection()]
         conf_copy = config.conf["YATA"].copy()
         conf_copy["deepl_key"] = self.deeplKey.GetValue()
         self._saveLLMConfig(self._current_service)
-        is_source = (txtCtrl == self.sourceLang)
-        select_language_helper(self, txtCtrl, sel, conf_copy, is_source)
+        current = self.sourceLangCode if is_source else self.targetLangCode
+        res = select_language_helper(self, current, sel, conf_copy, is_source)
+        if res is not None:
+            if is_source:
+                self.sourceLangCode = res
+                self.btnSelectSource.SetLabel(_("&Source Language: {lang}").format(lang=res))
+            else:
+                self.targetLangCode = res
+                self.btnSelectTarget.SetLabel(_("&Target Language: {lang}").format(lang=res))
 
     def onSelectModel(self, evt):
         import urllib.request
