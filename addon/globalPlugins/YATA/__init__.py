@@ -168,13 +168,13 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
     def translate_text(self, text, speak=True, browseable=False):
         if not text or not text.strip():
-            return
+            return False
             
         stripped = text.strip()
         if len(stripped) <= 1:
-            return
+            return False
         if stripped.isdigit():
-            return
+            return False
 
         app = self._get_app_name()
 
@@ -363,6 +363,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                 self._translation_cancel_events.discard(request_cancel_event)
 
         threading.Thread(target=do_translate).start()
+        return True
 
     def _hook_speak(self, speechSequence, *args, **kwargs):
         if self.speaking_translation:
@@ -375,8 +376,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             self.last_spoken_text = text
             app = self._get_app_name()
             if self._get_auto_translate_state(app):
-                self.translate_text(text, speak=True)
-                return
+                if self.translate_text(text, speak=True):
+                    return
         self._original_speak(speechSequence, *args, **kwargs)
 
     def _trigger_translation_cancel(self):
