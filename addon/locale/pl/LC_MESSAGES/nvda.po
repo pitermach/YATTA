@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 'YATA' '1.0'\n"
 "Report-Msgid-Bugs-To: 'nvda-translations@groups.io'\n"
-"POT-Creation-Date: 2026-05-15 20:46+0200\n"
-"PO-Revision-Date: 2026-05-15 20:53+0200\n"
+"POT-Creation-Date: 2026-05-31 14:45+0200\n"
+"PO-Revision-Date: 2026-05-31 16:47+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: pl\n"
@@ -18,152 +18,152 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 3.9\n"
 
-#: addon\globalPlugins\YATA\ui.py:33
+#: addon\globalPlugins\YATA\ui.py:18
+msgid "Language:"
+msgstr "Język:"
+
+#: addon\globalPlugins\YATA\ui.py:59
+msgid ""
+"Invalid language selected. Please choose a supported language from the list "
+"or enter a valid code."
+msgstr ""
+"Wybrano nieprawidłowy język. Prosze wybrać wspierany język z listy lub "
+"wprowadzić prawidłowy kod."
+
+#: addon\globalPlugins\YATA\ui.py:59 addon\globalPlugins\YATA\ui.py:489
+#: addon\globalPlugins\YATA\ui.py:504
+msgid "Error"
+msgstr "Błąd"
+
+#: addon\globalPlugins\YATA\ui.py:90
 msgid "No languages found or failed to fetch."
 msgstr "Nie znaleziono języków lub nie udało się pobrać listy."
 
-#: addon\globalPlugins\YATA\ui.py:39
+#: addon\globalPlugins\YATA\ui.py:96 addon\globalPlugins\YATA\ui.py:100
 msgid "Auto-detect (auto)"
 msgstr "Wykryj Automatycznie (auto)"
 
-#: addon\globalPlugins\YATA\ui.py:41
+#: addon\globalPlugins\YATA\ui.py:98
 msgid "Select Language:"
-msgstr "Wybierz Język"
+msgstr "Wybierz Język:"
 
-#: addon\globalPlugins\YATA\ui.py:41
-msgid "Language"
-msgstr "Język"
-
-#: addon\globalPlugins\YATA\ui.py:63
+#: addon\globalPlugins\YATA\ui.py:126
 msgid "Default prompt loaded."
-msgstr "Domyślny prompt wczytany"
+msgstr "Domyślny prompt wczytany."
 
-#: addon\globalPlugins\YATA\ui.py:67
+#: addon\globalPlugins\YATA\ui.py:130
 #, python-brace-format
 msgid "No default prompt found for model: {model}"
 msgstr "Nie znaleziono domyślnego prompt dla modelu: {model}"
 
-#: addon\globalPlugins\YATA\ui.py:70
+#: addon\globalPlugins\YATA\ui.py:133
 #, python-brace-format
 msgid "Failed to load prompts: {e}"
 msgstr "Nie udało się wczytać promptów: {e}"
 
-#: addon\globalPlugins\YATA\ui.py:74
+#: addon\globalPlugins\YATA\ui.py:137
 #, python-brace-format
 msgid "YATA settings - {app_name}"
 msgstr "Ustawienia YATA - {app_name}"
 
-#: addon\globalPlugins\YATA\ui.py:101
-msgid "Source Language:"
-msgstr "Język Źrudłowy"
+#: addon\globalPlugins\YATA\ui.py:165 addon\globalPlugins\YATA\ui.py:233
+#: addon\globalPlugins\YATA\ui.py:291 addon\globalPlugins\YATA\ui.py:402
+#, python-brace-format
+msgid "&Source Language: {lang}"
+msgstr "Język &Źrudłowy: {lang}"
 
-#: addon\globalPlugins\YATA\ui.py:102 addon\globalPlugins\YATA\ui.py:214
-msgid "Select Source Language..."
-msgstr "Wybierz Język Źrudłowy..."
+#: addon\globalPlugins\YATA\ui.py:170 addon\globalPlugins\YATA\ui.py:236
+#: addon\globalPlugins\YATA\ui.py:296 addon\globalPlugins\YATA\ui.py:405
+#, python-brace-format
+msgid "&Target Language: {lang}"
+msgstr "Język &Docelowy: {lang}"
 
-#: addon\globalPlugins\YATA\ui.py:106
-msgid "Target Language:"
-msgstr "Język Docelowy"
-
-#: addon\globalPlugins\YATA\ui.py:107 addon\globalPlugins\YATA\ui.py:219
-msgid "Select Target Language..."
-msgstr "Wybierz Język Docelowy..."
-
-#: addon\globalPlugins\YATA\ui.py:115 addon\globalPlugins\YATA\ui.py:243
+#: addon\globalPlugins\YATA\ui.py:179 addon\globalPlugins\YATA\ui.py:320
 msgid "System Prompt:"
-msgstr "Prompt Systemowy"
+msgstr "Prompt Systemowy:"
 
-#: addon\globalPlugins\YATA\ui.py:116 addon\globalPlugins\YATA\ui.py:244
+#: addon\globalPlugins\YATA\ui.py:180 addon\globalPlugins\YATA\ui.py:321
 msgid "User Prompt:"
-msgstr "Prompt Użytkownika"
+msgstr "Prompt Użytkownika:"
 
-#: addon\globalPlugins\YATA\ui.py:118 addon\globalPlugins\YATA\ui.py:245
+#: addon\globalPlugins\YATA\ui.py:182 addon\globalPlugins\YATA\ui.py:322
 msgid "Load Default Prompts"
 msgstr "Wczytaj Domyślne Prompty"
 
-#: addon\globalPlugins\YATA\ui.py:123
+#: addon\globalPlugins\YATA\ui.py:187
 msgid "Save cache to disk"
 msgstr "Zapisuj pamięć na dysku"
 
-#: addon\globalPlugins\YATA\ui.py:127
+#: addon\globalPlugins\YATA\ui.py:191
 msgid "Enable automatic translation"
 msgstr "Włącz automatyczne tłumaczenie"
 
-#: addon\globalPlugins\YATA\ui.py:131 addon\globalPlugins\YATA\ui.py:256
+#: addon\globalPlugins\YATA\ui.py:194
+msgid "Play sound during longer operations"
+msgstr "Odtwarzaj dźwięk podczas długich operacji"
+
+#: addon\globalPlugins\YATA\ui.py:199 addon\globalPlugins\YATA\ui.py:333
 msgid "Separate numbers when translating"
 msgstr "Oddzielaj liczby podczas tłumaczenia"
 
-#: addon\globalPlugins\YATA\ui.py:137
+#: addon\globalPlugins\YATA\ui.py:205
 msgid "Reset"
 msgstr "Resetuj"
 
-#: addon\globalPlugins\YATA\ui.py:169
+#: addon\globalPlugins\YATA\ui.py:244
 msgid "Are you sure you want to reset settings for this app?"
 msgstr "Czy na pewno chcesz zresetować ustawienia dla tej aplikacji?"
 
-#: addon\globalPlugins\YATA\ui.py:169
+#: addon\globalPlugins\YATA\ui.py:244
 msgid "Confirm Reset"
 msgstr "Potwierdź Reset"
 
 #. Service Selection
-#: addon\globalPlugins\YATA\ui.py:203
+#: addon\globalPlugins\YATA\ui.py:280
 msgid "Translation Service:"
-msgstr "Usługa tłumacząca"
+msgstr "Usługa tłumacząca:"
 
-#. Languages
-#: addon\globalPlugins\YATA\ui.py:213
-msgid "Source Language (e.g. 'auto', 'es'):"
-msgstr "Język Źrudłowy (np. auto, es)"
-
-#: addon\globalPlugins\YATA\ui.py:218
-msgid "Target Language (e.g. 'en', 'fr'):"
-msgstr "Język Docelowy (np. pl, en)"
-
-#: addon\globalPlugins\YATA\ui.py:227
+#: addon\globalPlugins\YATA\ui.py:304
 msgid "DeepL API Key:"
-msgstr "Klucz DeepL API"
+msgstr "Klucz API DeepL:"
 
-#: addon\globalPlugins\YATA\ui.py:236
+#: addon\globalPlugins\YATA\ui.py:313
 msgid "API Key:"
-msgstr "Klucz do API"
+msgstr "Klucz API:"
 
-#: addon\globalPlugins\YATA\ui.py:237
+#: addon\globalPlugins\YATA\ui.py:314
 msgid "Address / Base URL:"
-msgstr "Adres"
+msgstr "Adres:"
 
-#: addon\globalPlugins\YATA\ui.py:238
+#: addon\globalPlugins\YATA\ui.py:315
 msgid "Model:"
 msgstr "Model:"
 
-#: addon\globalPlugins\YATA\ui.py:239
+#: addon\globalPlugins\YATA\ui.py:316
 msgid "Select Model..."
 msgstr "Wybierz Model..."
 
-#: addon\globalPlugins\YATA\ui.py:249
+#: addon\globalPlugins\YATA\ui.py:326
 msgid "Stream responses"
 msgstr "Strumieniuj odpowiedzi"
 
-#: addon\globalPlugins\YATA\ui.py:253
+#: addon\globalPlugins\YATA\ui.py:330
 msgid "Save cache to disk on exit"
 msgstr "Zapisuj pamięć na dysku przy wychodzeniu"
 
-#: addon\globalPlugins\YATA\ui.py:361
+#: addon\globalPlugins\YATA\ui.py:445
 msgid "Select Model:"
-msgstr "Wybierz Model..."
+msgstr "Wybierz Model:"
 
-#: addon\globalPlugins\YATA\ui.py:376
+#: addon\globalPlugins\YATA\ui.py:460
 msgid "Source text:"
-msgstr "Tekst Źrudłowy"
+msgstr "Tekst Źrudłowy:"
 
-#: addon\globalPlugins\YATA\ui.py:379
+#: addon\globalPlugins\YATA\ui.py:463
 msgid "Is Regular Expression"
 msgstr "Wyrażenie Regularne"
 
-#: addon\globalPlugins\YATA\ui.py:405 addon\globalPlugins\YATA\ui.py:420
-msgid "Error"
-msgstr "Błąd"
-
-#: addon\globalPlugins\YATA\ui.py:420
+#: addon\globalPlugins\YATA\ui.py:504
 #, python-brace-format
 msgid ""
 "Token {{{field_name}}} refers to group {idx}, but the regex only has "
@@ -172,140 +172,140 @@ msgstr ""
 "Token {{{field_name}}} nawiązuje do grupy {idx}, jednak wyrażenie regularne "
 "posiada tylko {groups} grup."
 
-#: addon\globalPlugins\YATA\ui.py:435
+#: addon\globalPlugins\YATA\ui.py:519
 #, python-brace-format
 msgid "Cache Editor - {app_name} ({target_lang})"
 msgstr "Edytor Pamięci - {app_name} ({target_lang})"
 
-#: addon\globalPlugins\YATA\ui.py:445
+#: addon\globalPlugins\YATA\ui.py:529
 msgid "Source text"
 msgstr "Tekst źrudłowy"
 
-#: addon\globalPlugins\YATA\ui.py:446
+#: addon\globalPlugins\YATA\ui.py:530
 msgid "Translation"
 msgstr "Tłumaczenie"
 
-#: addon\globalPlugins\YATA\ui.py:447
+#: addon\globalPlugins\YATA\ui.py:531
 msgid "Is Regex"
 msgstr "Wyrażenie regularne"
 
-#: addon\globalPlugins\YATA\ui.py:454
+#: addon\globalPlugins\YATA\ui.py:538
 msgid "&Add"
 msgstr "&Dodaj"
 
-#: addon\globalPlugins\YATA\ui.py:458
+#: addon\globalPlugins\YATA\ui.py:542
 msgid "&Edit"
 msgstr "&Edytuj"
 
-#: addon\globalPlugins\YATA\ui.py:462
+#: addon\globalPlugins\YATA\ui.py:546
 msgid "&Delete"
 msgstr "&Usuń"
 
-#: addon\globalPlugins\YATA\ui.py:466
+#: addon\globalPlugins\YATA\ui.py:550
 msgid "&Clear Cache"
 msgstr "&Wyczyść pamięć"
 
-#: addon\globalPlugins\YATA\ui.py:492
+#: addon\globalPlugins\YATA\ui.py:576
 msgid "Yes"
 msgstr "Tak"
 
-#: addon\globalPlugins\YATA\ui.py:492
+#: addon\globalPlugins\YATA\ui.py:576
 msgid "No"
 msgstr "Nie"
 
-#: addon\globalPlugins\YATA\ui.py:495
+#: addon\globalPlugins\YATA\ui.py:579
 msgid "Add Cache Entry"
 msgstr "Dodaj wpis"
 
-#: addon\globalPlugins\YATA\ui.py:505
+#: addon\globalPlugins\YATA\ui.py:589
 msgid "Edit Cache Entry"
 msgstr "Edycja wpisu"
 
-#: addon\globalPlugins\YATA\ui.py:519
+#: addon\globalPlugins\YATA\ui.py:603
 msgid "Are you sure you want to clear the entire cache for this app?"
 msgstr "Czy na pewno chcesz wyczyścić całą pamieć dla tej aplikacji?"
 
-#: addon\globalPlugins\YATA\ui.py:519
+#: addon\globalPlugins\YATA\ui.py:603
 msgid "Clear Cache"
 msgstr "Wyczyść Pamięć"
 
-#: addon\globalPlugins\YATA\__init__.py:385
+#: addon\globalPlugins\YATA\__init__.py:404
 msgid "Translation Layer (Press S, T, C, or A)"
 msgstr "Aktywuj warstwę tłumacza"
 
-#: addon\globalPlugins\YATA\__init__.py:397
-#: addon\globalPlugins\YATA\__init__.py:507
+#: addon\globalPlugins\YATA\__init__.py:416
+#: addon\globalPlugins\YATA\__init__.py:526
 msgid "Translate selection"
 msgstr "Przetłumacz zaznaczenie"
 
-#: addon\globalPlugins\YATA\__init__.py:407
-#: addon\globalPlugins\YATA\__init__.py:409
-#: addon\globalPlugins\YATA\__init__.py:421
-#: addon\globalPlugins\YATA\__init__.py:423
+#: addon\globalPlugins\YATA\__init__.py:426
+#: addon\globalPlugins\YATA\__init__.py:428
+#: addon\globalPlugins\YATA\__init__.py:440
+#: addon\globalPlugins\YATA\__init__.py:442
 msgid "No selection"
 msgstr "Brak zaznaczenia"
 
-#: addon\globalPlugins\YATA\__init__.py:411
-#: addon\globalPlugins\YATA\__init__.py:508
+#: addon\globalPlugins\YATA\__init__.py:430
+#: addon\globalPlugins\YATA\__init__.py:527
 msgid "Translate selection in browseable message"
 msgstr "Przetłumacz zaznaczenie w trybie przeglądania"
 
-#: addon\globalPlugins\YATA\__init__.py:425
-#: addon\globalPlugins\YATA\__init__.py:509
+#: addon\globalPlugins\YATA\__init__.py:444
+#: addon\globalPlugins\YATA\__init__.py:528
 msgid "Translate last spoken phrase"
 msgstr "Przetłumacz ostatnio wypowiedzianą frazę"
 
-#: addon\globalPlugins\YATA\__init__.py:430
-#: addon\globalPlugins\YATA\__init__.py:437
+#: addon\globalPlugins\YATA\__init__.py:449
+#: addon\globalPlugins\YATA\__init__.py:456
 msgid "No last phrase found"
 msgstr "Nie znaleziono ostatnio wypowiedzianej frazy"
 
-#: addon\globalPlugins\YATA\__init__.py:432
-#: addon\globalPlugins\YATA\__init__.py:510
+#: addon\globalPlugins\YATA\__init__.py:451
+#: addon\globalPlugins\YATA\__init__.py:529
 msgid "Translate last spoken phrase in browseable message"
 msgstr "Przetłumacz ostatnio wypowiedzianą frazę w trybie przeglądania"
 
-#: addon\globalPlugins\YATA\__init__.py:439
-#: addon\globalPlugins\YATA\__init__.py:511
+#: addon\globalPlugins\YATA\__init__.py:458
+#: addon\globalPlugins\YATA\__init__.py:530
 msgid "Translate clipboard"
 msgstr "Przetłumacz schowek"
 
-#: addon\globalPlugins\YATA\__init__.py:445
-#: addon\globalPlugins\YATA\__init__.py:453
+#: addon\globalPlugins\YATA\__init__.py:464
+#: addon\globalPlugins\YATA\__init__.py:472
 msgid "No text on clipboard"
 msgstr "Brak tekstu w schowku"
 
-#: addon\globalPlugins\YATA\__init__.py:447
-#: addon\globalPlugins\YATA\__init__.py:512
+#: addon\globalPlugins\YATA\__init__.py:466
+#: addon\globalPlugins\YATA\__init__.py:531
 msgid "Translate clipboard in browseable message"
 msgstr "Przetłumacz schowek w trybie przeglądania"
 
-#: addon\globalPlugins\YATA\__init__.py:455
-#: addon\globalPlugins\YATA\__init__.py:513
+#: addon\globalPlugins\YATA\__init__.py:474
+#: addon\globalPlugins\YATA\__init__.py:532
 msgid "Toggle auto translate"
 msgstr "Przełącz automatyczne tłumaczenie"
 
-#: addon\globalPlugins\YATA\__init__.py:461
+#: addon\globalPlugins\YATA\__init__.py:480
 #, python-brace-format
 msgid "Auto translate on for {app}"
-msgstr "automatyczne tłumaczenie {app} włączone"
+msgstr "Automatyczne tłumaczenie {app} włączone"
 
-#: addon\globalPlugins\YATA\__init__.py:465
+#: addon\globalPlugins\YATA\__init__.py:484
 #, python-brace-format
 msgid "Auto translate off for {app}"
-msgstr "automatyczne tłumaczenie {app} wyłączone"
+msgstr "Automatyczne tłumaczenie {app} wyłączone"
 
-#: addon\globalPlugins\YATA\__init__.py:467
-#: addon\globalPlugins\YATA\__init__.py:514
+#: addon\globalPlugins\YATA\__init__.py:486
+#: addon\globalPlugins\YATA\__init__.py:533
 msgid "Open application settings"
 msgstr "Otwórz ustawienia aplikacji"
 
-#: addon\globalPlugins\YATA\__init__.py:471
+#: addon\globalPlugins\YATA\__init__.py:490
 msgid "No application active"
 msgstr "Brak aktywnej aplikacji"
 
-#: addon\globalPlugins\YATA\__init__.py:486
-#: addon\globalPlugins\YATA\__init__.py:515
+#: addon\globalPlugins\YATA\__init__.py:505
+#: addon\globalPlugins\YATA\__init__.py:534
 msgid "Open cache editor"
 msgstr "Otwórz edytor pamięci"
 
@@ -336,3 +336,15 @@ msgstr ""
 #: buildVars.py:29
 msgid "Initial Release"
 msgstr "Pierwsza wersja"
+
+#~ msgid "Select Source Language..."
+#~ msgstr "Wybierz Język Źrudłowy..."
+
+#~ msgid "Select Target Language..."
+#~ msgstr "Wybierz Język Docelowy..."
+
+#~ msgid "Source Language (e.g. 'auto', 'es'):"
+#~ msgstr "Język Źrudłowy (np. auto, es)"
+
+#~ msgid "Target Language (e.g. 'en', 'fr'):"
+#~ msgstr "Język Docelowy (np. pl, en)"
