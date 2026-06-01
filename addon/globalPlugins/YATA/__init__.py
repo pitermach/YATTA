@@ -1,3 +1,6 @@
+import config
+import ui as nvda_ui
+import threading
 import addonHandler
 import os
 import re

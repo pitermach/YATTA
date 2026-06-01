@@ -1,3 +1,7 @@
+import wx
+import gui
+import config
+import addonHandler
 from gui.settingsDialogs import SettingsPanel
 import addonHandler
 import os
