@@ -24,6 +24,12 @@ import speech
 import queueHandler
 import logHandler
 from . import ui
+from .services.google import GoogleTranslate
+from .services.bing import BingTranslate
+from .services.deepl import DeepLTranslate
+from .services.ollama import OllamaTranslate
+from .services.openai import OpenAITranslate
+from .services.gemini import GeminiTranslate
 
 try:
     from speech import speech as speechModule
