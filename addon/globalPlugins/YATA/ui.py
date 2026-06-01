@@ -1,8 +1,23 @@
-import wx
-import gui
 from gui.settingsDialogs import SettingsPanel
-import config
 import addonHandler
+import os
+import re
+import string
+import urllib.request
+import json
+import core
+import ui as nvda_ui
+import configobj
+import globalVars
+import tones
+from . import cache
+from .services.google import GoogleTranslate
+from .services.bing import BingTranslate
+from .services.deepl import DeepLTranslate
+from .services.ollama import OllamaTranslate
+from .services.openai import OpenAITranslate
+from .services.gemini import GeminiTranslate
+
 addonHandler.initTranslation()
 
 
@@ -55,7 +70,6 @@ class LanguageSelectionDialog(wx.Dialog):
             if code.lower() == "auto":
                 pass
             elif code not in self.langs_dict:
-                import gui
                 gui.messageBox(_("Invalid language selected. Please choose a supported language from the list or enter a valid code."), _("Error"), style=wx.OK | wx.ICON_ERROR, parent=self)
                 return
                 
@@ -63,30 +77,22 @@ class LanguageSelectionDialog(wx.Dialog):
         self.EndModal(wx.ID_OK)
 
 def select_language_helper(parent, current_code, service, conf_copy, is_source):
-    import core
     engine = None
     if service == "bing":
-        from .services.bing import BingTranslate
         engine = BingTranslate(conf_copy)
     elif service == "deepl":
-        from .services.deepl import DeepLTranslate
         engine = DeepLTranslate(conf_copy)
     elif service == "ollama":
-        from .services.ollama import OllamaTranslate
         engine = OllamaTranslate(conf_copy)
     elif service == "openai":
-        from .services.openai import OpenAITranslate
         engine = OpenAITranslate(conf_copy)
     elif service == "gemini":
-        from .services.gemini import GeminiTranslate
         engine = GeminiTranslate(conf_copy)
     else:
-        from .services.google import GoogleTranslate
         engine = GoogleTranslate(conf_copy)
         
     langs = engine.get_supported_languages()
     if not langs:
-        import ui as nvda_ui
         nvda_ui.message(_("No languages found or failed to fetch."))
         return None
         
@@ -109,8 +115,6 @@ def select_language_helper(parent, current_code, service, conf_copy, is_source):
     return code
 
 def load_default_prompt_helper(model, sysPromptCtrl, usrPromptCtrl):
-    import os
-    import json
     addon_dir = os.path.dirname(__file__)
     prompts_file = os.path.join(addon_dir, "prompts.json")
     try:
@@ -122,14 +126,11 @@ def load_default_prompt_helper(model, sysPromptCtrl, usrPromptCtrl):
                 entry = prompts[k]
                 sysPromptCtrl.SetValue(entry.get("system_prompt", ""))
                 usrPromptCtrl.SetValue(entry.get("user_prompt", ""))
-                import ui as nvda_ui
                 nvda_ui.message(_("Default prompt loaded."))
                 return
                 
-        import ui as nvda_ui
         nvda_ui.message(_("No default prompt found for model: {model}").format(model=model))
     except Exception as e:
-        import ui as nvda_ui
         nvda_ui.message(_("Failed to load prompts: {e}").format(e=e).format(e=e))
 
 class YATAAppDialog(wx.Dialog):
@@ -140,7 +141,6 @@ class YATAAppDialog(wx.Dialog):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         sHelper = gui.guiHelper.BoxSizerHelper(self, sizer=mainSizer)
         
-        import os, configobj, globalVars, config
         settings_dir = os.path.join(globalVars.appArgs.configPath, "YATA", "settings")
         if not os.path.exists(settings_dir):
             try:
@@ -240,9 +240,7 @@ class YATAAppDialog(wx.Dialog):
         load_default_prompt_helper(model, self.sysPrompt, self.usrPrompt)
         
     def onReset(self, evt):
-        import gui
         if gui.messageBox(_("Are you sure you want to reset settings for this app?"), _("Confirm Reset"), style=wx.YES_NO | wx.ICON_QUESTION) == wx.YES:
-            import os
             if os.path.exists(self.filepath):
                 os.remove(self.filepath)
             self.Destroy()
@@ -412,8 +410,6 @@ class YATASettingsPanel(SettingsPanel):
                 self.btnSelectTarget.SetLabel(_("&Target Language: {lang}").format(lang=res))
 
     def onSelectModel(self, evt):
-        import urllib.request
-        import json
         sel = self._current_service
         models = []
         try:
@@ -440,12 +436,10 @@ class YATASettingsPanel(SettingsPanel):
                     res = json.loads(response.read().decode('utf-8'))
                     models = [m['name'].split('/')[-1] for m in res.get('models', []) if 'generateContent' in m.get('supportedGenerationMethods', [])]
         except Exception as e:
-            import ui
             ui.message(f_("Failed to fetch models: {e}").format(e=e))
             return
             
         if not models:
-            import ui
             ui.message("No models found.")
             return
             
@@ -461,7 +455,6 @@ class CacheEntryDialog(wx.Dialog):
         super().__init__(parent, title=title)
         
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        import gui
         sHelper = gui.guiHelper.BoxSizerHelper(self, sizer=mainSizer)
         
         self.sourceCtrl = sHelper.addLabeledControl(_("Source text:"), wx.TextCtrl, value=source)
@@ -487,19 +480,16 @@ class CacheEntryDialog(wx.Dialog):
         
     def onOK(self, evt):
         if self.regexpChk.GetValue():
-            import re
             source = self.sourceCtrl.GetValue()
             try:
                 prog = re.compile(source)
             except Exception as e:
-                import gui
                 gui.messageBox(f_("Invalid regular expression:\n{e}"), _("Error"), style=wx.OK | wx.ICON_ERROR)
                 return
                 
             groups = prog.groups
             trans = self.transCtrl.GetValue()
             
-            import string
             formatter = string.Formatter()
             for literal_text, field_name, format_spec, conversion in formatter.parse(trans):
                 if field_name is not None:
@@ -507,7 +497,6 @@ class CacheEntryDialog(wx.Dialog):
                         try:
                             idx = int(field_name[1:])
                             if idx < 1 or idx > groups:
-                                import gui
                                 gui.messageBox(_("Token {{{field_name}}} refers to group {idx}, but the regex only has {groups} capture groups.").format(field_name=field_name, idx=idx, groups=groups), _("Error"), style=wx.OK | wx.ICON_ERROR)
                                 return
                         except ValueError:
@@ -527,7 +516,6 @@ class CacheEditorDialog(wx.Dialog):
         self.app_name = app_name
         self.target_lang = target_lang
         
-        from . import cache
         self.entries = cache.get_cache_entries(app_name, target_lang)
         
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -606,15 +594,12 @@ class CacheEditorDialog(wx.Dialog):
         self.refresh_list()
         
     def onClear(self, evt):
-        import gui
         if gui.messageBox(_("Are you sure you want to clear the entire cache for this app?"), _("Clear Cache"), style=wx.YES_NO | wx.ICON_QUESTION) == wx.YES:
-            from . import cache
             cache.clear_app_cache(self.app_name)
             self.entries = []
             self.refresh_list()
             
     def onOK(self, evt):
-        from . import cache
         app_cache = cache._cache.get(self.app_name, {})
         app_cache[self.target_lang] = self.entries
         cache._cache[self.app_name] = app_cache

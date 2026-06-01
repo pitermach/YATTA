@@ -1,20 +1,26 @@
 import addonHandler
+import os
+import re
+import time
+import tones
+import string
+import textInfos
+import wx
+import core
+import gui
+import queue
+import configobj
+import globalVars
+from .ui import YATAAppDialog, CacheEditorDialog
+
 addonHandler.initTranslation()
-import config
 import globalPluginHandler
 import scriptHandler
 import api
-import ui as nvda_ui
 import speech
 import queueHandler
-import threading
 import logHandler
 from . import ui
-from . import cache
-from .services.google import GoogleTranslate
-from .services.bing import BingTranslate
-from .services.deepl import DeepLTranslate
-from .services.ollama import OllamaTranslate
 
 try:
     from speech import speech as speechModule
@@ -64,7 +70,6 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         cache.init()
         self.auto_translate = False
         self.auto_translate_apps = {}
-        import gui
         gui.settingsDialogs.NVDASettingsDialog.categoryClasses.append(ui.YATASettingsPanel)
         
         self.speaking_translation = False
@@ -85,8 +90,6 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             
         self.last_spoken_text = ""
         
-        import queue
-        import threading
         self._translation_queue = queue.Queue()
         self._translation_worker_thread = threading.Thread(target=self._translation_worker, daemon=True)
         self._translation_worker_thread.start()
@@ -106,7 +109,6 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
     def terminate(self):
         if config.conf["YATA"].get("save_cache", True):
             cache.save()
-        import gui
         try:
             gui.settingsDialogs.NVDASettingsDialog.categoryClasses.remove(ui.YATASettingsPanel)
         except Exception:
@@ -120,7 +122,6 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
     def _get_app_name(self):
         try:
-            import globalVars
             obj = globalVars.focusObject
             if obj and obj.appModule:
                 return obj.appModule.appName
@@ -130,7 +131,6 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
     def _get_app_setting(self, app, key, default_val):
         if not app: return default_val
-        import os, configobj, globalVars
         settings_dir = os.path.join(globalVars.appArgs.configPath, "YATA", "settings")
         filepath = os.path.join(settings_dir, f"{app}.ini")
         if os.path.exists(filepath):
@@ -147,7 +147,6 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         if not app:
             return conf.get("play_sound", True)
         
-        import os, configobj, globalVars
         filepath = os.path.join(globalVars.appArgs.configPath, "YATA", "settings", f"{app}.ini")
         if os.path.exists(filepath):
             app_conf = configobj.ConfigObj(filepath)
@@ -173,13 +172,10 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         elif service == "deepl":
             return DeepLTranslate(conf.copy())
         elif service == "ollama":
-            from .services.ollama import OllamaTranslate
             return OllamaTranslate(conf.copy())
         elif service == "openai":
-            from .services.openai import OpenAITranslate
             return OpenAITranslate(conf.copy())
         elif service == "gemini":
-            from .services.gemini import GeminiTranslate
             return GeminiTranslate(conf.copy())
         else:
             return GoogleTranslate(conf.copy())
@@ -191,7 +187,6 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         stripped = text.strip()
         if len(stripped) <= 1:
             return False
-        import re
         if re.fullmatch(r'-?\d+(?:[.,/]\d+)*', stripped):
             return False
 
@@ -206,7 +201,6 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         
         cached = cache.get_translation(app, target_lang, text)
         
-        import time
         last_activity_time = [time.time()]
         translation_done = [False]
         request_cancel_event = threading.Event()
@@ -233,7 +227,6 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
         def do_translate():
             def beep_loop():
-                import tones
                 while not translation_done[0] and not request_cancel_event.is_set():
                     if time.time() - last_activity_time[0] >= 2.0:
                         tones.beep(2000, 10)
@@ -260,7 +253,6 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                     return res_str
                 
                 def process_regex_template(template, matches):
-                    import string
                     formatter = string.Formatter()
                     final_parts = []
                     for literal_text, field_name, format_spec, conversion in formatter.parse(template):
@@ -292,7 +284,6 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                     return
 
                 # Automatic Number Separation Pre-Processing
-                import re
                 parts = []
                 if separate_numbers:
                     parts = re.split(r'(-?\d+(?:[.,/]\d+)*)', text)
@@ -421,7 +412,6 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                 self.toggling = False
                 self.clearGestureBindings()
                 self.bindGestures(self.__gestures)
-                import tones
                 tones.beep(120, 100)
             return dummy_script
         
@@ -438,20 +428,17 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
     @scriptHandler.script(description=_("Translation Layer (Press S, T, C, or A)"))
     def script_layer(self, gesture):
         if self.toggling:
-            import tones
             tones.beep(120, 100)
             return
         self.bindGestures(self.__layerGestures)
         self.toggling = True
         self._layer_index = -1
-        import tones
         tones.beep(200, 10)
         
     @scriptHandler.script(description=_("Translate selection"))
     def script_translateSelection(self, gesture):
         obj = api.getCaretObject()
         try:
-            import textInfos
             info = obj.makeTextInfo(textInfos.POSITION_SELECTION)
             if info and not info.isCollapsed:
                 text = info.text
@@ -465,7 +452,6 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
     def script_translateSelectionBrowseable(self, gesture):
         obj = api.getCaretObject()
         try:
-            import textInfos
             info = obj.makeTextInfo(textInfos.POSITION_SELECTION)
             if info and not info.isCollapsed:
                 text = info.text
@@ -524,11 +510,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             nvda_ui.message(_("No application active"))
             return
         
-        import wx
         def show_dialog():
-            import core
-            from .ui import YATAAppDialog
-            import gui
             gui.mainFrame.prePopup()
             dlg = YATAAppDialog(gui.mainFrame, app)
             dlg.Show()
@@ -540,15 +522,10 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
     def script_cacheEditor(self, gesture):
         app = self._get_app_name()
         
-        import config
         conf = config.conf["YATA"]
         target_lang = self._get_app_setting(app, "target_lang", conf["target_lang"])
 
-        import wx
         def show_dialog():
-            import core
-            from .ui import CacheEditorDialog
-            import gui
             gui.mainFrame.prePopup()
             dlg = CacheEditorDialog(gui.mainFrame, app, target_lang)
             dlg.Show()
