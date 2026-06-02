@@ -116,8 +116,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                 self._translation_queue.task_done()
 
     def terminate(self):
-        if config.conf["YATA"].get("save_cache", True):
-            cache.save()
+        cache.save()
         try:
             gui.settingsDialogs.NVDASettingsDialog.categoryClasses.remove(ui.YATASettingsPanel)
         except Exception:

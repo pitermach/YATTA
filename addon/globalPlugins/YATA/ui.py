@@ -520,6 +520,20 @@ class CacheEditorDialog(wx.Dialog):
         self.app_name = app_name
         self.target_lang = target_lang
         
+        global_save = config.conf["YATA"].get("save_cache", True)
+        app_save = global_save
+        filepath = os.path.join(globalVars.appArgs.configPath, "YATA", "settings", f"{app_name}.ini")
+        if os.path.exists(filepath):
+            try:
+                conf = configobj.ConfigObj(filepath)
+                if "save_cache" in conf:
+                    app_save = conf["save_cache"].lower() == 'true'
+            except Exception:
+                pass
+        
+        if not app_save:
+            wx.CallAfter(gui.messageBox, _("Cache saving is disabled globally or for this application. Any changes made here are temporary and will be lost on restart unless cache saving is turned on."), _("Warning"), wx.OK | wx.ICON_WARNING)
+            
         self.entries = cache.get_cache_entries(app_name, target_lang)
         
         mainSizer = wx.BoxSizer(wx.VERTICAL)
