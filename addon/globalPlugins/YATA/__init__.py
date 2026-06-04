@@ -261,23 +261,27 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                     return res_str
                 
                 def process_regex_template(template, matches):
-                    formatter = string.Formatter()
+                    import re
+                    parts = re.split(r'({[PT]\d+})', template)
                     final_parts = []
-                    for literal_text, field_name, format_spec, conversion in formatter.parse(template):
+                    for part in parts:
                         if request_cancel_event.is_set(): return ""
-                        if literal_text:
-                            final_parts.append(literal_text)
-                        if field_name is not None:
+                        m = re.fullmatch(r'{([PT])(\d+)}', part)
+                        if m:
+                            prefix = m.group(1)
                             try:
-                                idx = int(field_name[1:]) - 1
+                                idx = int(m.group(2)) - 1
                                 if 0 <= idx < len(matches):
                                     val = matches[idx]
-                                    if field_name.startswith('T'):
-                                        # Translate it
+                                    if prefix == 'T':
                                         val = translate_single(val)
                                     final_parts.append(val)
+                                else:
+                                    final_parts.append(part)
                             except Exception:
-                                pass
+                                final_parts.append(part)
+                        else:
+                            final_parts.append(part)
                     return "".join(final_parts)
                 
                 if cached:
