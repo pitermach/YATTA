@@ -292,19 +292,19 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
             try:
                 lang_state = [source_lang, target_lang]
-            engine = get_engine_with_prompts()
+                engine = get_engine_with_prompts()
                 
                 def translate_single(s):
-                    cached_s = cache.get_translation(app, target_lang, s)
+                    cached_s = cache.get_translation(app, lang_state[1], s)
                     if cached_s:
                         if cached_s.get("is_regexp"):
                             return process_regex_template(cached_s["template"], cached_s["matches"])
                         return cached_s["template"]
                         
-                    res = engine.translate(s, source_lang, target_lang, stream=False)
+                    res = engine.translate(s, lang_state[0], lang_state[1], stream=False)
                     res_str = res if isinstance(res, str) else "".join(res)
                     res_str = TOKEN_REGEX.sub("", res_str)
-                    cache.set_translation(app, target_lang, s, res_str, is_regexp=False)
+                    cache.set_translation(app, lang_state[1], s, res_str, is_regexp=False)
                     return res_str
                 
                 def process_regex_template(template, matches):
