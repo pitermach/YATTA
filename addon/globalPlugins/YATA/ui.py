@@ -334,6 +334,7 @@ class YATASettingsPanel(SettingsPanel):
         
         self.separateNumbers = sHelper.addItem(wx.CheckBox(self, label=_("Separate numbers when translating")))
         self.separateNumbers.SetValue(conf.get("separate_numbers", False))
+        self.autoSwap.SetValue(conf.get("auto_swap", False))
         
         self.playSound = sHelper.addItem(wx.CheckBox(self, label=_("Play sound during longer operations")))
         play_sound_val = conf.get("play_sound", True)
@@ -395,6 +396,7 @@ class YATASettingsPanel(SettingsPanel):
         conf["deepl_key"] = self.deeplKey.GetValue()
         conf["save_cache"] = self.saveCache.GetValue()
         conf["separate_numbers"] = self.separateNumbers.GetValue()
+        conf["auto_swap"] = self.autoSwap.GetValue()
         conf["play_sound"] = self.playSound.GetValue()
         self._saveLLMConfig(self._current_service)
 

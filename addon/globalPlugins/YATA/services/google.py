@@ -5,6 +5,7 @@ from . import TranslationEngine
 
 class GoogleTranslate(TranslationEngine):
     name = "Google Translate (Free)"
+    supports_language_detection = True
 
     def get_supported_languages(self) -> dict:
         url = "https://translate.googleapis.com/translate_a/l?client=gtx"
@@ -35,6 +36,8 @@ class GoogleTranslate(TranslationEngine):
         try:
             with urllib.request.urlopen(req) as response:
                 result = json.loads(response.read().decode('utf-8'))
+                if len(result) > 2 and result[2]:
+                    self.last_detected_language = result[2]
                 translated_text = "".join([sentence[0] for sentence in result[0] if sentence[0]])
                 if stream:
                     return iter([translated_text])

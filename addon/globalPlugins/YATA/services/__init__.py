@@ -8,6 +8,7 @@ class TranslationEngine:
     has_api_key = False
     max_chars = 5000
     requires_sleep = True
+    supports_language_detection = False
     
     def __init__(self, config: dict):
         """

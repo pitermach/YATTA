@@ -7,6 +7,7 @@ from . import TranslationEngine
 
 class BingTranslate(TranslationEngine):
     name = "Bing Translate (Free Edge)"
+    supports_language_detection = True
     
     def __init__(self, config: dict):
         super().__init__(config)
@@ -69,6 +70,8 @@ class BingTranslate(TranslationEngine):
             req = urllib.request.Request(full_url, data=body, headers=headers)
             with urllib.request.urlopen(req) as response:
                 result = json.loads(response.read().decode('utf-8'))
+                if "detectedLanguage" in result[0]:
+                    self.last_detected_language = result[0]["detectedLanguage"].get("language")
                 translated_text = result[0]['translations'][0]['text']
                 if stream:
                     return iter([translated_text])

@@ -71,7 +71,8 @@ confspec = {
     "gemini_stream": "boolean(default=True)",
     "save_cache": "boolean(default=True)",
     "separate_numbers": "boolean(default=False)",
-    "play_sound": "boolean(default=True)"
+    "play_sound": "boolean(default=True)",
+    "auto_swap": "boolean(default=False)"
 }
 config.conf.spec["YATA"] = confspec
 
@@ -211,6 +212,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         conf = config.conf["YATA"]
         target_lang = self._get_app_setting(app, "target_lang", conf["target_lang"])
         source_lang = self._get_app_setting(app, "source_lang", conf["source_lang"])
+        auto_swap = str(self._get_app_setting(app, "auto_swap", conf.get("auto_swap", False))).lower() == 'true'
         service = conf["service"]
         stream_ollama = conf.get(f"{service}_stream", True) and service in ("ollama", "openai", "gemini")
         separate_numbers = str(self._get_app_setting(app, "separate_numbers", conf.get("separate_numbers", False))).lower() == 'true'
@@ -289,7 +291,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                 threading.Thread(target=beep_loop, daemon=True).start()
 
             try:
-                engine = get_engine_with_prompts()
+                lang_state = [source_lang, target_lang]
+            engine = get_engine_with_prompts()
                 
                 def translate_single(s):
                     cached_s = cache.get_translation(app, target_lang, s)
@@ -329,7 +332,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                     return "".join(final_parts)
                 
                 def process_text_chunk(text_chunk):
-                    cached = cache.get_translation(app, target_lang, text_chunk)
+                    cached = cache.get_translation(app, lang_state[1], text_chunk)
                     if cached:
                         if cached.get("is_regexp"):
                             final_text = process_regex_template(cached["template"], cached["matches"])
@@ -362,7 +365,16 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                         regex_source += "$"
                         
                         # Translate the tokenized string
-                        res = engine.translate(tokenized_str, source_lang, target_lang, stream=False)
+                        res = engine.translate(tokenized_str, lang_state[0], lang_state[1], stream=False)
+                        if auto_swap and lang_state[0] != "auto" and getattr(engine, 'supports_language_detection', False):
+                            detected = getattr(engine, 'last_detected_language', None)
+                            if detected:
+                                det_base = detected.split('-')[0].lower()
+                                tgt_base = lang_state[1].split('-')[0].lower()
+                                if det_base == tgt_base:
+                                    lang_state[0], lang_state[1] = lang_state[1], lang_state[0]
+                                    res = engine.translate(tokenized_str, lang_state[0], lang_state[1], stream=False)
+
                         res_str = res if isinstance(res, str) else "".join(res)
                         if request_cancel_event.is_set(): return "" ""
                         
@@ -375,7 +387,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                             template = template.replace(f"<token{i}>", f"{{P{i}}}")
                             
                         # Save to cache
-                        cache.set_translation(app, target_lang, regex_source, template, is_regexp=True)
+                        cache.set_translation(app, lang_state[1], regex_source, template, is_regexp=True)
                         
                         # Now process it like a normal regex hit
                         match = re.search(regex_source, text_chunk)
@@ -392,11 +404,21 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                             return final_text
 
                     # Normal translation
-                    res = engine.translate(text_chunk, source_lang, target_lang, stream=stream_ollama)
+                    res = engine.translate(text_chunk, lang_state[0], lang_state[1], stream=stream_ollama)
+                    if auto_swap and lang_state[0] != "auto" and getattr(engine, 'supports_language_detection', False):
+                        detected = getattr(engine, 'last_detected_language', None)
+                        if detected:
+                            det_base = detected.split('-')[0].lower()
+                            tgt_base = lang_state[1].split('-')[0].lower()
+                            if det_base == tgt_base:
+                                # Swap languages and re-run
+                                lang_state[0], lang_state[1] = lang_state[1], lang_state[0]
+                                res = engine.translate(text_chunk, lang_state[0], lang_state[1], stream=stream_ollama)
+
                     if isinstance(res, str):
                         res = TOKEN_REGEX.sub("", res)
                         if request_cancel_event.is_set(): return ""
-                        cache.set_translation(app, target_lang, text_chunk, res, is_regexp=False)
+                        cache.set_translation(app, lang_state[1], text_chunk, res, is_regexp=False)
                         if speak: speak_chunk(res)
                         return res
                     else:
@@ -428,7 +450,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                         final_text = "".join(full_text)
                         final_text = TOKEN_REGEX.sub("", final_text)
                         if not request_cancel_event.is_set():
-                            cache.set_translation(app, target_lang, text_chunk, final_text, is_regexp=False)
+                            cache.set_translation(app, lang_state[1], text_chunk, final_text, is_regexp=False)
                             return final_text
 
                 # Chunk and process

@@ -6,6 +6,7 @@ from . import TranslationEngine
 class DeepLTranslate(TranslationEngine):
     name = "DeepL"
     has_api_key = True
+    supports_language_detection = True
 
     def get_supported_languages(self) -> dict:
         api_key = self.config.get("deepl_key", "").strip()
@@ -58,6 +59,8 @@ class DeepLTranslate(TranslationEngine):
         try:
             with urllib.request.urlopen(req) as response:
                 result = json.loads(response.read().decode('utf-8'))
+                if "detected_source_language" in result["translations"][0]:
+                    self.last_detected_language = result["translations"][0]["detected_source_language"]
                 translated_text = result["translations"][0]["text"]
                 if stream:
                     return iter([translated_text])
