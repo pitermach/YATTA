@@ -334,6 +334,8 @@ class YATASettingsPanel(SettingsPanel):
         
         self.separateNumbers = sHelper.addItem(wx.CheckBox(self, label=_("Separate numbers when translating")))
         self.separateNumbers.SetValue(conf.get("separate_numbers", False))
+        
+        self.autoSwap = sHelper.addItem(wx.CheckBox(self, label=_("Automatically Swap languages if text is already in Target language")))
         self.autoSwap.SetValue(conf.get("auto_swap", False))
         
         self.playSound = sHelper.addItem(wx.CheckBox(self, label=_("Play sound during longer operations")))
@@ -386,6 +388,13 @@ class YATASettingsPanel(SettingsPanel):
         else:
             self.deeplPanel.Hide()
             self.llmPanel.Hide()
+            
+        supports_detection = sel in ("google", "bing", "deepl")
+        if supports_detection and self.sourceLangCode != "auto":
+            self.autoSwap.Enable()
+        else:
+            self.autoSwap.Disable()
+            
         self.Layout()
 
     def onSave(self):
@@ -414,6 +423,7 @@ class YATASettingsPanel(SettingsPanel):
             else:
                 self.targetLangCode = res
                 self.btnSelectTarget.SetLabel(_("&Target Language: {lang}").format(lang=res))
+        self.updateVisibility()
 
     def onSelectModel(self, evt):
         sel = self._current_service

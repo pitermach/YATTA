@@ -365,7 +365,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                         regex_source += "$"
                         
                         # Translate the tokenized string
-                        res = engine.translate(tokenized_str, lang_state[0], lang_state[1], stream=False)
+                        actual_source = "auto" if (auto_swap and getattr(engine, 'supports_language_detection', False)) else lang_state[0]
+                        res = engine.translate(tokenized_str, actual_source, lang_state[1], stream=False)
                         if auto_swap and lang_state[0] != "auto" and getattr(engine, 'supports_language_detection', False):
                             detected = getattr(engine, 'last_detected_language', None)
                             if detected:
@@ -404,7 +405,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                             return final_text
 
                     # Normal translation
-                    res = engine.translate(text_chunk, lang_state[0], lang_state[1], stream=stream_ollama)
+                    actual_source = "auto" if (auto_swap and getattr(engine, 'supports_language_detection', False)) else lang_state[0]
+                    res = engine.translate(text_chunk, actual_source, lang_state[1], stream=stream_ollama)
                     if auto_swap and lang_state[0] != "auto" and getattr(engine, 'supports_language_detection', False):
                         detected = getattr(engine, 'last_detected_language', None)
                         if detected:
