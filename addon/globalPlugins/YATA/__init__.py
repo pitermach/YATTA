@@ -31,6 +31,11 @@ from .services.ollama import OllamaTranslate
 from .services.openai import OpenAITranslate
 from .services.gemini import GeminiTranslate
 
+
+NUM_REGEX = re.compile(r'-?\d+(?:[.,/]\d+)*')
+TOKEN_REGEX = re.compile(r"<token\d+>")
+SENTENCE_BREAKS_RE = re.compile(r'[.,!?;:\n،؛؟　-〿︐-︰！-｠]')
+
 try:
     from speech import speech as speechModule
 except ImportError:
@@ -195,7 +200,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         stripped = text.strip()
         if len(stripped) <= 1:
             return False
-        if re.fullmatch(r'-?\d+(?:[.,/]\d+)*', stripped):
+        if NUM_REGEX.fullmatch(stripped):
             return False
 
         app = self._get_app_name()
@@ -256,7 +261,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                         
                     res = engine.translate(s, source_lang, target_lang, stream=False)
                     res_str = res if isinstance(res, str) else "".join(res)
-                    res_str = re.sub(r"<token\d+>", "", res_str)
+                    res_str = TOKEN_REGEX.sub("", res_str)
                     cache.set_translation(app, target_lang, s, res_str, is_regexp=False)
                     return res_str
                 
@@ -298,7 +303,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                 # Automatic Number Separation Pre-Processing
                 parts = []
                 if separate_numbers:
-                    parts = re.split(r'(-?\d+(?:[.,/]\d+)*)', text)
+                    parts = NUM_REGEX.split(text)
                 
                 if separate_numbers and len(parts) > 1:
                     # We have numbers. Build tokenized string
@@ -306,7 +311,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                     regex_source = "^"
                     match_idx = 1
                     for part in parts:
-                        if re.fullmatch(r'-?\d+(?:[.,/]\d+)*', part):
+                        if NUM_REGEX.fullmatch(part):
                             tokenized_str += f"<token{match_idx}>"
                             regex_source += r"(-?\d+(?:[.,/]\d+)*)"
                             match_idx += 1
@@ -350,7 +355,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                 # Normal translation
                 res = engine.translate(text, source_lang, target_lang, stream=stream_ollama)
                 if isinstance(res, str):
-                    res = re.sub(r"<token\d+>", "", res)
+                    res = TOKEN_REGEX.sub("", res)
                     if request_cancel_event.is_set(): return
                     cache.set_translation(app, target_lang, text, res, is_regexp=False)
                     if speak: speak_chunk(res)
@@ -362,7 +367,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                     def emit_buffer():
                         if sentence_buffer:
                             msg = "".join(sentence_buffer).strip()
-                            msg = re.sub(r"<token\d+>", "", msg)
+                            msg = TOKEN_REGEX.sub("", msg)
                             if msg:
                                 speak_chunk(msg)
                             sentence_buffer.clear()
@@ -375,14 +380,14 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                         full_text.append(chunk)
                         if speak:
                             sentence_buffer.append(chunk)
-                            if any(c in chunk for c in ['.', '?', '!', '。', '？', '！', '\n']):
+                            if SENTENCE_BREAKS_RE.search(chunk):
                                 emit_buffer()
                     
                     if speak:
                         emit_buffer()
                     
                     final_text = "".join(full_text)
-                    final_text = re.sub(r"<token\d+>", "", final_text)
+                    final_text = TOKEN_REGEX.sub("", final_text)
                     if not request_cancel_event.is_set():
                         cache.set_translation(app, target_lang, text, final_text, is_regexp=False)
                         if browseable: queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, final_text, "YATA Translation")
