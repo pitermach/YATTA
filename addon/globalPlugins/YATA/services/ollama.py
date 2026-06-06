@@ -5,6 +5,9 @@ from . import TranslationEngine
 
 class OllamaTranslate(TranslationEngine):
     name = "Ollama"
+    has_api_key = False
+    max_chars = 4000
+    requires_sleep = False
 
     def _read_stream(self, req):
         try:

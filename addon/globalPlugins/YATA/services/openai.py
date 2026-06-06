@@ -6,6 +6,7 @@ from . import TranslationEngine
 class OpenAITranslate(TranslationEngine):
     name = "OpenAI"
     has_api_key = True
+    max_chars = 4000
 
     def get_supported_languages(self) -> dict:
         import os

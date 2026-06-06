@@ -6,6 +6,8 @@ class TranslationEngine:
     """
     name = "Base"
     has_api_key = False
+    max_chars = 5000
+    requires_sleep = True
     
     def __init__(self, config: dict):
         """

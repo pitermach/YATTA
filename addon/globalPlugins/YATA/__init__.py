@@ -238,6 +238,42 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             conf_copy[f"{service}_user_prompt"] = user_prompt
             return self.get_engine(conf_copy)
 
+        def split_into_chunks(text, max_chars):
+            import re
+            pattern = r'([.,!?;:\n،؛؟　-〿︐-︰！-｠]+)'
+            parts = re.split(pattern, text)
+            
+            chunks = []
+            current_chunk = ""
+            
+            for i in range(0, len(parts), 2):
+                chunk_part = parts[i]
+                delim = parts[i+1] if i + 1 < len(parts) else ""
+                
+                piece = chunk_part + delim
+                
+                if len(current_chunk) + len(piece) <= max_chars:
+                    current_chunk += piece
+                else:
+                    if current_chunk:
+                        chunks.append(current_chunk)
+                    
+                    if len(piece) > max_chars:
+                        for j in range(0, len(piece), max_chars):
+                            sub_piece = piece[j:j+max_chars]
+                            if len(sub_piece) == max_chars:
+                                chunks.append(sub_piece)
+                                current_chunk = ""
+                            else:
+                                current_chunk = sub_piece
+                    else:
+                        current_chunk = piece
+                        
+            if current_chunk:
+                chunks.append(current_chunk)
+                
+            return chunks
+
         def do_translate():
             def beep_loop():
                 while not translation_done[0] and not request_cancel_event.is_set():
@@ -289,108 +325,133 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                             final_parts.append(part)
                     return "".join(final_parts)
                 
-                if cached:
-                    if cached.get("is_regexp"):
-                        final_text = process_regex_template(cached["template"], cached["matches"])
-                    else:
-                        final_text = cached["template"]
-                        
-                    if request_cancel_event.is_set(): return
-                    if speak: speak_chunk(final_text)
-                    if browseable: queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, final_text, "YATA Translation")
-                    return
-
-                # Automatic Number Separation Pre-Processing
-                parts = []
-                if separate_numbers:
-                    parts = NUM_REGEX.split(text)
-                
-                if separate_numbers and len(parts) > 1:
-                    # We have numbers. Build tokenized string
-                    tokenized_str = ""
-                    regex_source = "^"
-                    match_idx = 1
-                    for part in parts:
-                        if NUM_REGEX.fullmatch(part):
-                            tokenized_str += f"<token{match_idx}>"
-                            regex_source += r"(-?\d+(?:[.,/]\d+)*)"
-                            match_idx += 1
+                def process_text_chunk(text_chunk):
+                    cached = cache.get_translation(app, target_lang, text_chunk)
+                    if cached:
+                        if cached.get("is_regexp"):
+                            final_text = process_regex_template(cached["template"], cached["matches"])
                         else:
-                            tokenized_str += part
-                            regex_source += re.escape(part).replace(r"\ ", " ")
-                    regex_source += "$"
-                    
-                    # Translate the tokenized string
-                    res = engine.translate(tokenized_str, source_lang, target_lang, stream=False)
-                    res_str = res if isinstance(res, str) else "".join(res)
-                    if request_cancel_event.is_set(): return
-                    
-                    # Replace <tokenX> with {PX}
-                    template = res_str
-                    missing_values_indices = []
-                    for i in range(1, match_idx):
-                        if f"<token{i}>" not in template:
-                            missing_values_indices.append(i - 1)
-                        template = template.replace(f"<token{i}>", f"{{P{i}}}")
-                        
-                    # Save to cache
-                    cache.set_translation(app, target_lang, regex_source, template, is_regexp=True)
-                    
-                    # Now process it like a normal regex hit
-                    match = re.search(regex_source, text)
-                    if match:
-                        final_text = process_regex_template(template, match.groups())
-                        if request_cancel_event.is_set(): return
-                        if speak: speak_chunk(final_text)
-                        if browseable: queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, final_text, "YATA Translation")
-                        
-                        if missing_values_indices and speak:
-                            import tones
-                            tones.beep(1500, 50)
-                            missing_strs = [match.groups()[idx] for idx in missing_values_indices]
-                            speak_chunk(_("Warning, unused values: ") + ", ".join(missing_strs))
+                            final_text = cached["template"]
                             
-                        return
+                        if request_cancel_event.is_set(): return "" ""
+                        if speak: speak_chunk(final_text)
+                        # browseable moved to end
+                        return final_text
 
-                # Normal translation
-                res = engine.translate(text, source_lang, target_lang, stream=stream_ollama)
-                if isinstance(res, str):
-                    res = TOKEN_REGEX.sub("", res)
-                    if request_cancel_event.is_set(): return
-                    cache.set_translation(app, target_lang, text, res, is_regexp=False)
-                    if speak: speak_chunk(res)
-                    if browseable: queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, res, "YATA Translation")
-                else:
-                    full_text = []
-                    sentence_buffer = []
+                    # Automatic Number Separation Pre-Processing
+                    parts = []
+                    if separate_numbers:
+                        parts = NUM_REGEX.split(text_chunk)
                     
-                    def emit_buffer():
-                        if sentence_buffer:
-                            msg = "".join(sentence_buffer).strip()
-                            msg = TOKEN_REGEX.sub("", msg)
-                            if msg:
-                                speak_chunk(msg)
-                            sentence_buffer.clear()
+                    if separate_numbers and len(parts) > 1:
+                        # We have numbers. Build tokenized string
+                        tokenized_str = ""
+                        regex_source = "^"
+                        match_idx = 1
+                        for part in parts:
+                            if NUM_REGEX.fullmatch(part):
+                                tokenized_str += f"<token{match_idx}>"
+                                regex_source += r"(-?\d+(?:[.,/]\d+)*)"
+                                match_idx += 1
+                            else:
+                                tokenized_str += part
+                                regex_source += re.escape(part).replace(r"\ ", " ")
+                        regex_source += "$"
+                        
+                        # Translate the tokenized string
+                        res = engine.translate(tokenized_str, source_lang, target_lang, stream=False)
+                        res_str = res if isinstance(res, str) else "".join(res)
+                        if request_cancel_event.is_set(): return "" ""
+                        
+                        # Replace <tokenX> with {PX}
+                        template = res_str
+                        missing_values_indices = []
+                        for i in range(1, match_idx):
+                            if f"<token{i}>" not in template:
+                                missing_values_indices.append(i - 1)
+                            template = template.replace(f"<token{i}>", f"{{P{i}}}")
+                            
+                        # Save to cache
+                        cache.set_translation(app, target_lang, regex_source, template, is_regexp=True)
+                        
+                        # Now process it like a normal regex hit
+                        match = re.search(regex_source, text_chunk)
+                        if match:
+                            final_text = process_regex_template(template, match.groups())
+                            if request_cancel_event.is_set(): return ""
+                            if speak: speak_chunk(final_text)
+                            # browseable moved to end
+                            if missing_values_indices and speak:
+                                import tones
+                                tones.beep(1500, 50)
+                                missing_strs = [match.groups()[idx] for idx in missing_values_indices]
+                                speak_chunk(_("Warning, unused values: ") + ", ".join(missing_strs))
+                            return final_text
 
-                    for chunk in res:
-                        if request_cancel_event.is_set():
-                            try: res.close()
-                            except: pass
-                            break
-                        full_text.append(chunk)
+                    # Normal translation
+                    res = engine.translate(text_chunk, source_lang, target_lang, stream=stream_ollama)
+                    if isinstance(res, str):
+                        res = TOKEN_REGEX.sub("", res)
+                        if request_cancel_event.is_set(): return ""
+                        cache.set_translation(app, target_lang, text_chunk, res, is_regexp=False)
+                        if speak: speak_chunk(res)
+                        return res
+                    else:
+                        full_text = []
+                        sentence_buffer = []
+                        
+                        def emit_buffer():
+                            if sentence_buffer:
+                                msg = "".join(sentence_buffer).strip()
+                                msg = TOKEN_REGEX.sub("", msg)
+                                if msg:
+                                    speak_chunk(msg)
+                                sentence_buffer.clear()
+
+                        for chunk in res:
+                            if request_cancel_event.is_set():
+                                try: res.close()
+                                except: pass
+                                break
+                            full_text.append(chunk)
+                            if speak:
+                                sentence_buffer.append(chunk)
+                                if SENTENCE_BREAKS_RE.search(chunk):
+                                    emit_buffer()
+                        
                         if speak:
-                            sentence_buffer.append(chunk)
-                            if SENTENCE_BREAKS_RE.search(chunk):
-                                emit_buffer()
+                            emit_buffer()
+                        
+                        final_text = "".join(full_text)
+                        final_text = TOKEN_REGEX.sub("", final_text)
+                        if not request_cancel_event.is_set():
+                            cache.set_translation(app, target_lang, text_chunk, final_text, is_regexp=False)
+                            return final_text
+
+                # Chunk and process
+                if len(text) > getattr(engine, 'max_chars', 4000):
+                    chunks = split_into_chunks(text, getattr(engine, 'max_chars', 4000))
+                else:
+                    chunks = [text]
                     
-                    if speak:
-                        emit_buffer()
+                is_first = True
+                full_translated_text = []
+                for c in chunks:
+                    if request_cancel_event.is_set(): break
+                    if not is_first and getattr(engine, 'requires_sleep', True):
+                        for _ in range(10):
+                            if request_cancel_event.is_set(): break
+                            time.sleep(0.1)
+                    if request_cancel_event.is_set(): break
                     
-                    final_text = "".join(full_text)
-                    final_text = TOKEN_REGEX.sub("", final_text)
-                    if not request_cancel_event.is_set():
-                        cache.set_translation(app, target_lang, text, final_text, is_regexp=False)
-                        if browseable: queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, final_text, "YATA Translation")
+                    chunk_res = process_text_chunk(c)
+                    if chunk_res:
+                        full_translated_text.append(chunk_res)
+                    is_first = False
+
+                if browseable and full_translated_text:
+                    combined_text = "".join(full_translated_text)
+                    queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, combined_text, "YATA Translation")
 
             except Exception as e:
                 if not request_cancel_event.is_set():

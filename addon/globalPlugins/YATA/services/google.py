@@ -25,11 +25,11 @@ class GoogleTranslate(TranslationEngine):
             "dt": "t",
             "q": text
         }
-        query_string = urllib.parse.urlencode(params)
-        full_url = f"{url}?{query_string}"
+        query_string = urllib.parse.urlencode(params).encode('utf-8')
         
-        req = urllib.request.Request(full_url, headers={
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+        req = urllib.request.Request(url, data=query_string, headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+            "Content-Type": "application/x-www-form-urlencoded"
         })
         
         try:
