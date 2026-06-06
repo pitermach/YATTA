@@ -628,6 +628,43 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             
         wx.CallAfter(show_dialog)
 
+
+    @scriptHandler.script(description=_("Swap source and target languages"))
+    def script_swapLanguages(self, gesture):
+        app = self._get_app_name()
+        
+        conf = config.conf["YATA"]
+        target_lang = self._get_app_setting(app, "target_lang", conf["target_lang"])
+        source_lang = self._get_app_setting(app, "source_lang", conf["source_lang"])
+        
+        if source_lang == "auto":
+            nvda_ui.message(_("Unable to swap from auto detect!"))
+            return
+            
+        new_source = target_lang
+        new_target = source_lang
+        
+        # Check if app-specific settings exist
+        if app:
+            settings_dir = os.path.join(globalVars.appArgs.configPath, "YATA", "settings")
+            app_filepath = os.path.join(settings_dir, f"{app}.ini")
+            if os.path.exists(app_filepath):
+                try:
+                    import configobj
+                    app_conf = configobj.ConfigObj(app_filepath)
+                    app_conf["source_lang"] = new_source
+                    app_conf["target_lang"] = new_target
+                    app_conf.write()
+                    nvda_ui.message(_("Translating from {src} to {tgt} in {app}").format(src=new_source, tgt=new_target, app=app))
+                    return
+                except Exception as e:
+                    logHandler.log.error(f"YATA: failed to swap languages for app {app}: {e}")
+        
+        # Fallback to global config
+        conf["source_lang"] = new_source
+        conf["target_lang"] = new_target
+        nvda_ui.message(_("Translating from {src} to {tgt}").format(src=new_source, tgt=new_target))
+
     _layer_commands = [
         ("s", "translateSelection", _("Translate selection")),
         ("shift+s", "translateSelectionBrowseable", _("Translate selection in browseable message")),
@@ -638,6 +675,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         ("a", "toggleAuto", _("Toggle auto translate")),
         ("o", "appSettings", _("Open application settings")),
         ("e", "cacheEditor", _("Open cache editor")),
+        ("w", "swapLanguages", _("Swap source and target languages")),
     ]
 
     @scriptHandler.script()
@@ -670,6 +708,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         "kb:a": "toggleAuto",
         "kb:o": "appSettings",
         "kb:e": "cacheEditor",
+        "kb:w": "swapLanguages",
         "kb:tab": "layerNext",
         "kb:shift+tab": "layerPrev",
         "kb:enter": "layerExecute"
