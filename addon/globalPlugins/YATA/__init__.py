@@ -203,6 +203,9 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         if NUM_REGEX.fullmatch(stripped):
             return False
 
+        if browseable:
+            self.is_long_operation = True
+
         app = self._get_app_name()
 
         conf = config.conf["YATA"]
@@ -459,6 +462,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             finally:
                 translation_done[0] = True
                 self._translation_cancel_events.discard(request_cancel_event)
+                if browseable:
+                    self.is_long_operation = False
 
         self._translation_queue.put(do_translate)
         return True
@@ -486,6 +491,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
     def _hook_cancelSpeech(self, *args, **kwargs):
         logHandler.log.debug("YATA: _hook_cancelSpeech triggered")
+        if getattr(self, 'is_long_operation', False):
+            return
         self._trigger_translation_cancel()
 
     def bindGestures(self, gestures):
