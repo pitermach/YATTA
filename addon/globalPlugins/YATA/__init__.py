@@ -322,7 +322,10 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                     
                     # Replace <tokenX> with {PX}
                     template = res_str
+                    missing_values_indices = []
                     for i in range(1, match_idx):
+                        if f"<token{i}>" not in template:
+                            missing_values_indices.append(i - 1)
                         template = template.replace(f"<token{i}>", f"{{P{i}}}")
                         
                     # Save to cache
@@ -335,6 +338,13 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                         if request_cancel_event.is_set(): return
                         if speak: speak_chunk(final_text)
                         if browseable: queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, final_text, "YATA Translation")
+                        
+                        if missing_values_indices and speak:
+                            import tones
+                            tones.beep(1500, 50)
+                            missing_strs = [match.groups()[idx] for idx in missing_values_indices]
+                            speak_chunk(_("Warning, unused values: ") + ", ".join(missing_strs))
+                            
                         return
 
                 # Normal translation
