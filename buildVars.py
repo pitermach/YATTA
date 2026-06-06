@@ -14,11 +14,11 @@ from site_scons.site_tools.NVDATool.utils import _
 # Add-on information variables
 addon_info = AddonInfo(
 	# add-on Name/identifier, internal for NVDA
-	addon_name="YATA",
+	addon_name="YATTA",
 	# Add-on summary/title, usually the user visible name of the add-on
 	# Translators: Summary/title for this add-on
 	# to be shown on installation and add-on information found in add-on store
-	addon_summary=_("YATA"),
+	addon_summary=_("YATTA"),
 	# Add-on description
 	# Translators: Long description to be shown for this add-on on add-on information from add-on store
 	addon_description=_("""Translate text using both traditional translation services and LLM's, including ones running locally. The addon supports automatic translation, per-application settings and a dynamic cache system great for translating applications or games."""),
@@ -30,9 +30,9 @@ addon_info = AddonInfo(
 	# Author(s)
 	addon_author="Piotr Machacz <pitermach@gmail.com>",
 	# URL for the add-on documentation support
-	addon_url="https://github.com/pitermach/YATA/",
+	addon_url="https://github.com/pitermach/YATTA/",
 	# URL for the add-on repository where the source code can be found
-	addon_sourceURL="https://github.com/pitermach/YATA/",
+	addon_sourceURL="https://github.com/pitermach/YATTA/",
 	# Documentation file name
 	addon_docFileName="readme.html",
 	# Minimum NVDA version supported (e.g. "2019.3.0", minor version is optional)
@@ -57,7 +57,7 @@ addon_info = AddonInfo(
 # pythonSources = ["addon/globalPlugins/*.py"]
 # For more information on SCons Glob expressions please take a look at:
 # https://scons.org/doc/production/HTML/scons-user/apd.html
-pythonSources: list[str] = ["addon/globalPlugins/YATA/**/*.py"]
+pythonSources: list[str] = ["addon/globalPlugins/YATTA/**/*.py"]
 
 # Files that contain strings for translation. Usually your python sources
 i18nSources: list[str] = pythonSources + ["buildVars.py"]

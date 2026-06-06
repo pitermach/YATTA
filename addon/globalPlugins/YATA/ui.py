@@ -137,15 +137,15 @@ def load_default_prompt_helper(model, sysPromptCtrl, usrPromptCtrl):
     except Exception as e:
         nvda_ui.message(_("Failed to load prompts: {e}").format(e=e).format(e=e))
 
-class YATAAppDialog(wx.Dialog):
+class YATTAAppDialog(wx.Dialog):
     def __init__(self, parent, app_name):
-        super().__init__(parent, title=_("YATA settings - {app_name}").format(app_name=app_name).format(app_name=app_name))
+        super().__init__(parent, title=_("YATTA settings - {app_name}").format(app_name=app_name).format(app_name=app_name))
         self.app_name = app_name
         
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         sHelper = gui.guiHelper.BoxSizerHelper(self, sizer=mainSizer)
         
-        settings_dir = os.path.join(globalVars.appArgs.configPath, "YATA", "settings")
+        settings_dir = os.path.join(globalVars.appArgs.configPath, "YATTA", "settings")
         if not os.path.exists(settings_dir):
             try:
                 os.makedirs(settings_dir)
@@ -157,7 +157,7 @@ class YATAAppDialog(wx.Dialog):
         else:
             self.app_conf = configobj.ConfigObj()
             
-        self.global_conf = config.conf["YATA"]
+        self.global_conf = config.conf["YATTA"]
         self.service = self.global_conf.get("service", "google")
         
         def get_val(key, global_fallback):
@@ -267,8 +267,8 @@ class YATAAppDialog(wx.Dialog):
     def onCancel(self, evt):
         self.Destroy()
 
-class YATASettingsPanel(SettingsPanel):
-    title = "YATA"
+class YATTASettingsPanel(SettingsPanel):
+    title = "YATTA"
     
     def makeSettings(self, settingsSizer):
         sHelper = gui.guiHelper.BoxSizerHelper(self, sizer=settingsSizer)
@@ -276,7 +276,7 @@ class YATASettingsPanel(SettingsPanel):
         self.serviceList = ["google", "bing", "deepl", "ollama", "openai", "gemini"]
         self.serviceNames = ["Google Translate (Free)", "Bing Translate (Free)", "DeepL", "Ollama", "OpenAI", "Google Gemini"]
         
-        conf = config.conf["YATA"]
+        conf = config.conf["YATTA"]
         
         # Service Selection
         self.serviceChoice = sHelper.addLabeledControl(_("Translation Service:"), wx.Choice, choices=self.serviceNames)
@@ -357,7 +357,7 @@ class YATASettingsPanel(SettingsPanel):
         
     def _saveLLMConfig(self, service):
         if service not in ("ollama", "openai", "gemini"): return
-        conf = config.conf["YATA"]
+        conf = config.conf["YATTA"]
         if service != "ollama": conf[f"{service}_key"] = self.llmKey.GetValue()
         if service in ("ollama", "openai"): conf[f"{service}_address"] = self.llmAddress.GetValue()
         conf[f"{service}_model"] = self.llmModel.GetValue()
@@ -367,7 +367,7 @@ class YATASettingsPanel(SettingsPanel):
 
     def _loadLLMConfig(self, service):
         if service not in ("ollama", "openai", "gemini"): return
-        conf = config.conf["YATA"]
+        conf = config.conf["YATTA"]
         self.llmKey.SetValue(conf.get(f"{service}_key", ""))
         self.llmAddress.SetValue(conf.get(f"{service}_address", ""))
         self.llmModel.SetValue(conf.get(f"{service}_model", ""))
@@ -398,7 +398,7 @@ class YATASettingsPanel(SettingsPanel):
         self.Layout()
 
     def onSave(self):
-        conf = config.conf["YATA"]
+        conf = config.conf["YATTA"]
         conf["service"] = self.serviceList[self.serviceChoice.GetSelection()]
         conf["source_lang"] = self.sourceLangCode
         conf["target_lang"] = self.targetLangCode
@@ -411,7 +411,7 @@ class YATASettingsPanel(SettingsPanel):
 
     def onSelectLanguage(self, is_source):
         sel = self.serviceList[self.serviceChoice.GetSelection()]
-        conf_copy = config.conf["YATA"].copy()
+        conf_copy = config.conf["YATTA"].copy()
         conf_copy["deepl_key"] = self.deeplKey.GetValue()
         self._saveLLMConfig(self._current_service)
         current = self.sourceLangCode if is_source else self.targetLangCode
@@ -532,9 +532,9 @@ class CacheEditorDialog(wx.Dialog):
         self.app_name = app_name
         self.target_lang = target_lang
         
-        global_save = config.conf["YATA"].get("save_cache", True)
+        global_save = config.conf["YATTA"].get("save_cache", True)
         app_save = global_save
-        filepath = os.path.join(globalVars.appArgs.configPath, "YATA", "settings", f"{app_name}.ini")
+        filepath = os.path.join(globalVars.appArgs.configPath, "YATTA", "settings", f"{app_name}.ini")
         if os.path.exists(filepath):
             try:
                 conf = configobj.ConfigObj(filepath)

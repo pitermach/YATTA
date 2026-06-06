@@ -14,7 +14,7 @@ import gui
 import queue
 import configobj
 import globalVars
-from .ui import YATAAppDialog, CacheEditorDialog
+from .ui import YATTAAppDialog, CacheEditorDialog
 
 addonHandler.initTranslation()
 import globalPluginHandler
@@ -74,10 +74,10 @@ confspec = {
     "play_sound": "boolean(default=True)",
     "auto_swap": "boolean(default=False)"
 }
-config.conf.spec["YATA"] = confspec
+config.conf.spec["YATTA"] = confspec
 
 class GlobalPlugin(globalPluginHandler.GlobalPlugin):
-    scriptCategory = "YATA"
+    scriptCategory = "YATTA"
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -85,7 +85,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         cache.init()
         self.auto_translate = False
         self.auto_translate_apps = {}
-        gui.settingsDialogs.NVDASettingsDialog.categoryClasses.append(ui.YATASettingsPanel)
+        gui.settingsDialogs.NVDASettingsDialog.categoryClasses.append(ui.YATTASettingsPanel)
         
         self.speaking_translation = False
         self._original_speak = speechModule.speak
@@ -99,9 +99,9 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
         try:
             speechModule.speechCanceled.register(self._hook_cancelSpeech)
-            logHandler.log.debug("YATA: Registered speech.speechCanceled extension point")
+            logHandler.log.debug("YATTA: Registered speech.speechCanceled extension point")
         except Exception as e:
-            logHandler.log.warning(f"YATA: Failed to register speech.speechCanceled: {e}")
+            logHandler.log.warning(f"YATTA: Failed to register speech.speechCanceled: {e}")
             
         self.last_spoken_text = ""
         
@@ -117,14 +117,14 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             try:
                 job()
             except Exception as e:
-                logHandler.log.error(f"YATA: Background translation failed: {e}")
+                logHandler.log.error(f"YATTA: Background translation failed: {e}")
             finally:
                 self._translation_queue.task_done()
 
     def terminate(self):
         cache.save()
         try:
-            gui.settingsDialogs.NVDASettingsDialog.categoryClasses.remove(ui.YATASettingsPanel)
+            gui.settingsDialogs.NVDASettingsDialog.categoryClasses.remove(ui.YATTASettingsPanel)
         except Exception:
             pass
         speechModule.speak = self._original_speak
@@ -132,7 +132,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         try:
             speechModule.speechCanceled.unregister(self._hook_cancelSpeech)
         except Exception as e:
-            logHandler.log.warning(f"YATA: Failed to unregister speech.speechCanceled: {e}")
+            logHandler.log.warning(f"YATTA: Failed to unregister speech.speechCanceled: {e}")
 
     def _get_app_name(self):
         try:
@@ -145,7 +145,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
     def _get_app_setting(self, app, key, default_val):
         if not app: return default_val
-        settings_dir = os.path.join(globalVars.appArgs.configPath, "YATA", "settings")
+        settings_dir = os.path.join(globalVars.appArgs.configPath, "YATTA", "settings")
         filepath = os.path.join(settings_dir, f"{app}.ini")
         if os.path.exists(filepath):
             try:
@@ -157,11 +157,11 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         return default_val
 
     def _get_play_sound_state(self, app):
-        conf = config.conf["YATA"]
+        conf = config.conf["YATTA"]
         if not app:
             return conf.get("play_sound", True)
         
-        filepath = os.path.join(globalVars.appArgs.configPath, "YATA", "settings", f"{app}.ini")
+        filepath = os.path.join(globalVars.appArgs.configPath, "YATTA", "settings", f"{app}.ini")
         if os.path.exists(filepath):
             app_conf = configobj.ConfigObj(filepath)
             if "play_sound" in app_conf:
@@ -178,7 +178,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
     def get_engine(self, conf_dict=None):
         if conf_dict is None:
-            conf_dict = config.conf["YATA"].copy()
+            conf_dict = config.conf["YATTA"].copy()
         service = conf_dict["service"]
         conf = conf_dict
         if service == "bing":
@@ -209,7 +209,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
         app = self._get_app_name()
 
-        conf = config.conf["YATA"]
+        conf = config.conf["YATTA"]
         target_lang = self._get_app_setting(app, "target_lang", conf["target_lang"])
         source_lang = self._get_app_setting(app, "source_lang", conf["source_lang"])
         auto_swap = str(self._get_app_setting(app, "auto_swap", conf.get("auto_swap", False))).lower() == 'true'
@@ -478,7 +478,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
                 if browseable and full_translated_text:
                     combined_text = "".join(full_translated_text)
-                    queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, combined_text, "YATA Translation")
+                    queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, combined_text, "YATTA Translation")
 
             except Exception as e:
                 if not request_cancel_event.is_set():
@@ -508,13 +508,13 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         self._original_speak(speechSequence, *args, **kwargs)
 
     def _trigger_translation_cancel(self):
-        logHandler.log.debug("YATA: _trigger_translation_cancel called")
+        logHandler.log.debug("YATTA: _trigger_translation_cancel called")
         for ev in list(self._translation_cancel_events):
             ev.set()
         self._translation_cancel_events.clear()
 
     def _hook_cancelSpeech(self, *args, **kwargs):
-        logHandler.log.debug("YATA: _hook_cancelSpeech triggered")
+        logHandler.log.debug("YATTA: _hook_cancelSpeech triggered")
         if getattr(self, 'is_long_operation', False):
             return
         self._trigger_translation_cancel()
@@ -631,7 +631,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         
         def show_dialog():
             gui.mainFrame.prePopup()
-            dlg = YATAAppDialog(gui.mainFrame, app)
+            dlg = YATTAAppDialog(gui.mainFrame, app)
             dlg.Show()
             gui.mainFrame.postPopup()
             
@@ -641,7 +641,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
     def script_cacheEditor(self, gesture):
         app = self._get_app_name()
         
-        conf = config.conf["YATA"]
+        conf = config.conf["YATTA"]
         target_lang = self._get_app_setting(app, "target_lang", conf["target_lang"])
 
         def show_dialog():
@@ -657,7 +657,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
     def script_swapLanguages(self, gesture):
         app = self._get_app_name()
         
-        conf = config.conf["YATA"]
+        conf = config.conf["YATTA"]
         target_lang = self._get_app_setting(app, "target_lang", conf["target_lang"])
         source_lang = self._get_app_setting(app, "source_lang", conf["source_lang"])
         
@@ -670,7 +670,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         
         # Check if app-specific settings exist
         if app:
-            settings_dir = os.path.join(globalVars.appArgs.configPath, "YATA", "settings")
+            settings_dir = os.path.join(globalVars.appArgs.configPath, "YATTA", "settings")
             app_filepath = os.path.join(settings_dir, f"{app}.ini")
             if os.path.exists(app_filepath):
                 try:
@@ -682,7 +682,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                     nvda_ui.message(_("Translating from {src} to {tgt} in {app}").format(src=new_source, tgt=new_target, app=app))
                     return
                 except Exception as e:
-                    logHandler.log.error(f"YATA: failed to swap languages for app {app}: {e}")
+                    logHandler.log.error(f"YATTA: failed to swap languages for app {app}: {e}")
         
         # Fallback to global config
         conf["source_lang"] = new_source

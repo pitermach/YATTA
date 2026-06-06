@@ -10,7 +10,7 @@ _cache_dir = ""
 
 def init():
     global _cache_dir, _cache
-    _cache_dir = os.path.join(globalVars.appArgs.configPath, "YATA", "cache")
+    _cache_dir = os.path.join(globalVars.appArgs.configPath, "YATTA", "cache")
     if not os.path.exists(_cache_dir):
         try:
             os.makedirs(_cache_dir)
@@ -38,11 +38,11 @@ def init():
 
 def save():
     import config
-    global_save = config.conf["YATA"].get("save_cache", True)
+    global_save = config.conf["YATTA"].get("save_cache", True)
     
     def should_save(app):
         import os, configobj, globalVars
-        settings_dir = os.path.join(globalVars.appArgs.configPath, "YATA", "settings")
+        settings_dir = os.path.join(globalVars.appArgs.configPath, "YATTA", "settings")
         filepath = os.path.join(settings_dir, f"{app}.ini")
         if os.path.exists(filepath):
             try:
