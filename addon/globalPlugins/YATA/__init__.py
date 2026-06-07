@@ -387,8 +387,9 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                                 missing_values_indices.append(i - 1)
                             template = template.replace(f"<token{i}>", f"{{P{i}}}")
                             
-                        # Save to cache
-                        cache.set_translation(app, lang_state[1], regex_source, template, is_regexp=True)
+                        # Save to cache if no unused values
+                        if not missing_values_indices:
+                            cache.set_translation(app, lang_state[1], regex_source, template, is_regexp=True)
                         
                         # Now process it like a normal regex hit
                         match = re.search(regex_source, text_chunk)
@@ -398,7 +399,6 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                             if speak: speak_chunk(final_text)
                             # browseable moved to end
                             if missing_values_indices and speak:
-                                import tones
                                 tones.beep(1500, 50)
                                 missing_strs = [match.groups()[idx] for idx in missing_values_indices]
                                 speak_chunk(_("Warning, unused values: ") + ", ".join(missing_strs))
