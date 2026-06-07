@@ -466,7 +466,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                 for c in chunks:
                     if request_cancel_event.is_set(): break
                     if not is_first and getattr(engine, 'requires_sleep', True):
-                        for _ in range(10):
+                        for _delay_idx in range(10):
                             if request_cancel_event.is_set(): break
                             time.sleep(0.1)
                     if request_cancel_event.is_set(): break
