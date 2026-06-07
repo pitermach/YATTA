@@ -32,7 +32,7 @@ from .services.openai import OpenAITranslate
 from .services.gemini import GeminiTranslate
 
 
-NUM_REGEX = re.compile(r'-?\d+(?:[.,/]\d+)*')
+NUM_REGEX = re.compile(r'(-?\d+(?:[.,/]\d+)*)')
 TOKEN_REGEX = re.compile(r"<token\d+>")
 SENTENCE_BREAKS_RE = re.compile(r'[.,!?;:\n،؛؟　-〿︐-︰！-｠]')
 
