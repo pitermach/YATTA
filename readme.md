@@ -113,7 +113,7 @@ An example translation into Polish would look like this:
 
 ```
 
-{T1\}, {T2\}, {P3} punktów życia i {P4} kart w swojej talii.
+{T1}, {T2}, {P3} punktów życia i {P4} kart w swojej talii.
 
 ```
 
