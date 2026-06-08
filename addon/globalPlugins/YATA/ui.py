@@ -500,7 +500,7 @@ class CacheEntryDialog(wx.Dialog):
             try:
                 prog = re.compile(source)
             except Exception as e:
-                gui.messageBox(f_("Invalid regular expression:\n{e}"), _("Error"), style=wx.OK | wx.ICON_ERROR)
+                gui.messageBox(_("Invalid regular expression:\n{error}").format(error=e), _("Error"), style=wx.OK | wx.ICON_ERROR)
                 return
                 
             groups = prog.groups
