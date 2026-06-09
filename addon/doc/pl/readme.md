@@ -108,6 +108,20 @@ Używanie modeli translategemma ma jedną wadę w porównaniu do usług takich j
 
 Na koniec omówienia tematu dzielenia liczb, jest to funkcja, którą najlepiej stosować w konkretnych aplikacjach lub grach. Do ogólnego tłumaczenia tekstów, takich jak posty w mediach społecznościowych, lepiej wysyłać tekst ze wszystkimi nienaruszonymi liczbami do usługi, aby zachować formatowanie takich rzeczy jak daty.
 
+## Współtworzenie
+
+Jeśli znalazłeś/aś błąd, chcesz zaproponować nową funkcję lub przetłumaczyć YATTA na swój własny język, Twoja pomoc jest niezwykle mile widziana. Najlepszym sposobem, aby to zrobić, jest otwarcie zgłoszenia (issue) w serwisie GitHub.
+
+Na potrzeby rozwoju dodatku i tłumaczeń wykorzystywany jest część [szablonu dodatku NVDA](https://github.com/nvaccess/AddonTemplate). Aby zbudować pakiet dodatku lub wygenerować plik .pot do tłumaczenia, musisz posiadać zainstalowane pakiety: Python, SCons, gettext oraz pakiet Pythona `markdown`. Zależności Pythona, takie jak scons i markdown, można zainstalować za pomocą narzędzia `uv`, natomiast gettext można łatwo pobrać przy użyciu `winget`.
+
+
+
+## Podziękowania
+
+Projekt YATTA nie powstałby, gdyby nie dodatki do NVDA, które pojawiły się wcześniej i zainspirowały różne aspekty jego działania. Należą do nich JGT (Japanese Games Translator), [Instant Translate](https://github.com/nvdaaddons/instantTranslate) oraz [NVDA Translate](https://github.com/yplassiard/nvda-translate).
+
+Chciałbym również podziękować moim testerom wersji pre-alpha – Oriolowi Gomezowi oraz Talonowi, którzy przekazali mi nieocenione uwagi i opinie.
+
 ## Zastrzeżenia
 
 * Choć YATTA sama z siebie nie zbiera żadnych informacji, każdy tłumaczony tekst jest wysyłany do wybranej usługi tłumaczeniowej. Pamiętaj o polityce prywatności usługi, z której korzystasz, i nie tłumacz żadnych poufnych informacji.

@@ -144,6 +144,19 @@ Using translategemma models has one disadvantage compared to a service like Deep
 
 Lastly, on the topic of number splitting, it’s a feature best used in specific apps or games. For general purpose translation of texts like social media posts, it’s better to send the text with all numbers intact to the service to preserve formatting of things like dates.
 
+## Contributing
+
+If you found a bug, want to suggest a feature or want to translate YATTA into your own language, you are more than welcome to do so. The best way to do this is by opening a github issue.
+
+For development and translation, a subset of the [NVDA addon template](https://github.com/nvaccess/AddonTemplate) is used. To build the addon package or generate the .pot file for translation, you need to have python, scons, gettext and the markdown python package. the python dependencies such as scons and markdown can be installed through uv, while gettext can be downloaded easily using winget.
+
+
+
+## Credits
+
+YATTA would not have been possible if not for the NVDA addons that came before and inspired various aspects of its design. These include JGT (aka the japanese games translator), [Instant Translate](https://github.com/nvdaaddons/instantTranslate) and [NVDA Translate](https://github.com/yplassiard/nvda-translate)
+
+I would also like to thank my testers - Oriol Gomez and Talon, who have both provided invaluable feedback during development of this add-on.
 
 ## Disclaimers
 
@@ -152,4 +165,4 @@ Lastly, on the topic of number splitting, it’s a feature best used in specific
 
 - Neither YATTA nor the service providers can guarantee the accuracy of a translation. LLM’s can hallucinate and even conventional services can provide incorrect translations. If you are translating sensitive information, consult a professional translator.
 
-- Large Language Models, specifically Google Gemini, was used to aid in development of this add-on.
+- Large Language Models, specifically Google Gemini, were used to aid in development of this add-on.
