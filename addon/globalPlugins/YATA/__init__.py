@@ -232,6 +232,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         translation_done = [False]
         request_cancel_event = threading.Event()
         self._translation_cancel_events.add(request_cancel_event)
+        pending_warnings = []
 
         def speak_chunk(chunk):
             last_activity_time[0] = time.time()
@@ -243,6 +244,10 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                 finally:
                     self.speaking_translation = False
             queueHandler.queueFunction(queueHandler.eventQueue, do_speak)
+
+        def announce_warning(warning):
+            tones.beep(1500, 50)
+            speak_chunk(warning)
 
         def get_engine_with_prompts():
             conf_copy = conf.copy()
@@ -407,10 +412,13 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                             if request_cancel_event.is_set(): return ""
                             if speak: speak_chunk(final_text)
                             # browseable moved to end
-                            if missing_values_indices and speak:
-                                tones.beep(1500, 50)
+                            if missing_values_indices:
                                 missing_strs = [match.groups()[idx] for idx in missing_values_indices]
-                                speak_chunk(_("Warning, unused values: ") + ", ".join(missing_strs))
+                                warning = _("Warning, unused values: ") + ", ".join(missing_strs)
+                                if speak:
+                                    announce_warning(warning)
+                                elif on_complete:
+                                    pending_warnings.append(warning)
                             return final_text
 
                     # Normal translation
@@ -488,8 +496,13 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                 if full_translated_text:
                     combined_text = "".join(full_translated_text)
                     if on_complete:
+                        def complete_translation():
+                            on_complete(combined_text)
+                            for warning in pending_warnings:
+                                announce_warning(warning)
+
                         queueHandler.queueFunction(
-                            queueHandler.eventQueue, on_complete, combined_text
+                            queueHandler.eventQueue, complete_translation
                         )
                     if browseable:
                         queueHandler.queueFunction(
