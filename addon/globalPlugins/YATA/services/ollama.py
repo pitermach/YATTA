@@ -3,6 +3,9 @@ import urllib.parse
 import json
 from . import TranslationEngine
 
+OLLAMA_REQUEST_TIMEOUT = 20
+
+
 class OllamaTranslate(TranslationEngine):
     name = "Ollama"
     has_api_key = False
@@ -11,7 +14,9 @@ class OllamaTranslate(TranslationEngine):
 
     def _read_stream(self, req):
         try:
-            with urllib.request.urlopen(req) as response:
+            with urllib.request.urlopen(
+                req, timeout=OLLAMA_REQUEST_TIMEOUT
+            ) as response:
                 while True:
                     line = response.readline()
                     if not line:
@@ -83,7 +88,9 @@ class OllamaTranslate(TranslationEngine):
             return self._read_stream(req)
             
         try:
-            with urllib.request.urlopen(req) as response:
+            with urllib.request.urlopen(
+                req, timeout=OLLAMA_REQUEST_TIMEOUT
+            ) as response:
                 result = json.loads(response.read().decode('utf-8'))
                 return result.get('response', '')
         except Exception as e:
