@@ -8,6 +8,21 @@ class OpenAITranslate(TranslationEngine):
     has_api_key = True
     max_chars = 4000
 
+    def _get_api_key(self) -> str:
+        api_key = self.config.get("openai_key", "").strip()
+        if not api_key:
+            raise Exception("OpenAI API key not configured.")
+
+        # http.client encodes header values as Latin-1. OpenAI API keys are
+        # ASCII, so reject a damaged or incorrectly pasted key here instead of
+        # exposing a misleading codec error when the request is sent.
+        if not api_key.isascii() or not api_key.isprintable():
+            raise Exception(
+                "OpenAI API key contains invalid characters. "
+                "Please copy and paste the API key again."
+            )
+        return api_key
+
     def get_supported_languages(self) -> dict:
         import os
         model = self.config.get("openai_model", "")
@@ -43,9 +58,7 @@ class OpenAITranslate(TranslationEngine):
             raise Exception(f"OpenAI Translate error: {str(e)}")
 
     def translate(self, text: str, source_lang: str = "auto", target_lang: str = "en", stream: bool = False):
-        api_key = self.config.get("openai_key", "").strip()
-        if not api_key:
-            raise Exception("OpenAI API key not configured.")
+        api_key = self._get_api_key()
             
         address = self.config.get("openai_address", "https://api.openai.com/v1").rstrip("/")
         model = self.config.get("openai_model", "gpt-5.4-mini")
@@ -76,9 +89,11 @@ class OpenAITranslate(TranslationEngine):
             "stream": stream
         }
         
-        body = json.dumps(data).encode('utf-8')
+        # Keep the request explicitly UTF-8 from the JSON serializer through
+        # to the wire. This supports every character NVDA can provide.
+        body = json.dumps(data, ensure_ascii=False).encode('utf-8')
         req = urllib.request.Request(url, data=body, headers={
-            "Content-Type": "application/json",
+            "Content-Type": "application/json; charset=utf-8",
             "Authorization": f"Bearer {api_key}"
         })
         
