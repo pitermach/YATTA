@@ -255,7 +255,14 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             user_prompt = self._get_app_setting(app, "user_prompt", conf.get(f"{service}_user_prompt", ""))
             conf_copy[f"{service}_system_prompt"] = system_prompt
             conf_copy[f"{service}_user_prompt"] = user_prompt
-            return self.get_engine(conf_copy)
+            engine = self.get_engine(conf_copy)
+            if hasattr(engine, "status_callback"):
+                def announce_ollama_status(status):
+                    if status == "loading_model":
+                        speak_chunk(_("Loading model"))
+
+                engine.status_callback = announce_ollama_status
+            return engine
 
         def split_into_chunks(text, max_chars):
             import re
