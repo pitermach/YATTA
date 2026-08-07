@@ -106,6 +106,9 @@ msgstr "Odtwarzaj dźwięk podczas długich operacji"
 msgid "Separate numbers when translating"
 msgstr "Oddzielaj liczby podczas tłumaczenia"
 
+msgid "Don't translate NVDA messages, such as control information"
+msgstr "Nie tłumacz komunikatów NVDA, takich jak informacje o elementach sterujących"
+
 #: addon\globalPlugins\YATTA\ui.py:209
 msgid "Reset"
 msgstr "Resetuj"

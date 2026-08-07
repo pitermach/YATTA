@@ -334,6 +334,12 @@ class YATTASettingsPanel(SettingsPanel):
         
         self.separateNumbers = sHelper.addItem(wx.CheckBox(self, label=_("Separate numbers when translating")))
         self.separateNumbers.SetValue(conf.get("separate_numbers", False))
+
+        self.filterNvdaMessages = sHelper.addItem(wx.CheckBox(
+            self,
+            label=_("Don't translate NVDA messages, such as control information"),
+        ))
+        self.filterNvdaMessages.SetValue(conf.get("filter_nvda_messages", True))
         
         self.autoSwap = sHelper.addItem(wx.CheckBox(self, label=_("Automatically Swap languages if text is already in Target language")))
         self.autoSwap.SetValue(conf.get("auto_swap", False))
@@ -405,6 +411,7 @@ class YATTASettingsPanel(SettingsPanel):
         conf["deepl_key"] = self.deeplKey.GetValue()
         conf["save_cache"] = self.saveCache.GetValue()
         conf["separate_numbers"] = self.separateNumbers.GetValue()
+        conf["filter_nvda_messages"] = self.filterNvdaMessages.GetValue()
         conf["auto_swap"] = self.autoSwap.GetValue()
         conf["play_sound"] = self.playSound.GetValue()
         self._saveLLMConfig(self._current_service)

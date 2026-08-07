@@ -26,7 +26,7 @@ Wszystkie polecenia dostępne w warstwie skrótu NVDA+Shift+T mogą mieć równi
 
 Naciśnij T, aby przetłumaczyć ostatnio wypowiedzianą frazę, S, aby przetłumaczyć zaznaczony tekst w dokumencie lub na stronie internetowej, lub C, aby przetłumaczyć schowek. Naciśnięcie dowolnego z powyższych poleceń z klawiszem Shift spowoduje wyświetlenie tłumaczenia w wirtualnym buforze zamiast jego odczytania na głos.
 
-Naciśnij A, aby przełączyć automatyczne tłumaczenie. Gdy ta opcja jest włączona, YATTA będzie automatycznie tłumaczyć wszystko, co mówi NVDA. Pamiętaj, że wprowadzi to opóźnienie między naciśnięciem klawisza a rozpoczęciem mowy przez NVDA, ponieważ YATTA musi poczekać na zakończenie tłumaczenia. Każdy wypowiedziany tekst jest zapisywany w pamięci podręcznej, więc jeśli NVDA powtórzy ten sam tekst, czas reakcji powinien być znacznie krótszy. To ustawienie jest zapisywane tylko dla aktywnej aplikacji. Oznacza to, że jeśli musisz zrobić coś w innym programie i przełączysz się na niego, tłumaczenie zostanie automatycznie wstrzymane i wznowione, gdy tylko powrócisz.
+Naciśnij A, aby przełączyć automatyczne tłumaczenie. Gdy ta opcja jest włączona, YATTA będzie automatycznie tłumaczyć treści użytkownika we wszystkim, co mówi NVDA. Domyślnie informacje o elementach sterujących i formatowaniu generowane przez NVDA pozostają niezmienione. Pamiętaj, że wprowadzi to opóźnienie między naciśnięciem klawisza a rozpoczęciem mowy przez NVDA, ponieważ YATTA musi poczekać na zakończenie tłumaczenia. Każdy wypowiedziany tekst jest zapisywany w pamięci podręcznej, więc jeśli NVDA powtórzy ten sam tekst, czas reakcji powinien być znacznie krótszy. To ustawienie jest zapisywane tylko dla aktywnej aplikacji. Oznacza to, że jeśli musisz zrobić coś w innym programie i przełączysz się na niego, tłumaczenie zostanie automatycznie wstrzymane i wznowione, gdy tylko powrócisz.
 
 Naciśnięcie W zamieni miejscami język źródłowy i docelowy. To polecenie zadziała tylko wtedy, gdy język źródłowy nie jest ustawiony na automatyczne wykrywanie. Jeśli skonfigurowałeś określone ustawienia dla aktywnego programu (więcej o tym później), zamiana zostanie wykonana dla tego programu, w przeciwnym razie zmienione zostanie ustawienie globalne.
 
@@ -50,6 +50,7 @@ Globalne opcje dla YATTA można zmienić w oknie ustawień NVDA w kategorii YATT
 * Strumieniuj odpowiedzi – jeśli ta opcja jest zaznaczona, odpowiedzi z usług LLM będą odczytywane na bieżąco w miarę ich napływania, zamiast czekać na pełne tłumaczenie. Zaznaczenie tej opcji znacznie poprawia szybkość reakcji.
 * Zapisuj pamięć na dysku przy wychodzeniu – gdy ta opcja jest zaznaczona, pamięć podręczna tłumaczeń jest zapisywana na dysku podczas zamykania NVDA. Wyłączenie tej opcji nadal zachowa tłumaczenia w pamięci RAM, ale nie zapisze ich na dysku. To ustawienie można nadpisać dla poszczególnych aplikacji, np. aby zapisywać pamięć podręczną tylko w określonych programach.
 * Oddziwelaj liczby podczas tłumaczenia – jeśli ta opcja jest zaznaczona, każdy tekst zawierający liczby jest automatycznie zapisywany w pamięci podręcznej jako wyrażenie regularne z symbolami zastępczymi dla każdej liczby.
+* Nie tłumacz komunikatów NVDA, takich jak informacje o elementach sterujących – gdy automatyczne tłumaczenie jest aktywne, nazwy i inne treści użytkownika są tłumaczone, natomiast role, stany, pozycje i informacje o formatowaniu generowane przez NVDA pozostają niezmienione. Ta opcja jest domyślnie włączona.
 * Automatycznie zamień języki, jeśli tekst jest już w języku docelowym – ta opcja jest dostępna tylko wtedy, gdy używana jest konwencjonalna usługa, a język źródłowy nie jest ustawiony na automatyczne wykrywanie. Jeśli usługa tłumaczeniowa wykryje, że tekst jest już w języku docelowym, tłumaczenie zostanie po cichu wykonane ponownie z zamienionymi językami. Uwaga: wykonywanie tłumaczeń w ten sposób trwa dłużej i wymaga dwukrotnego wysyłania tekstu do usługi, więc jeśli chcesz często wykonywać tłumaczenia z zamianą języków, lepiej zrobić to ręcznie, naciskając W z poziomu warstwy poleceń. Wykrywanie języka może być również mniej dokładne w przypadku krótszych tekstów.
 * Odtwarzaj dźwięk podczas długich operacji – jeśli tłumaczenie trwa dłużej i ta opcja jest zaznaczona, co 2 sekundy odtwarzane jest kliknięcie, informujące o tym, że YATTA nadal pracuje nad tłumaczeniem.
 
@@ -119,6 +120,8 @@ Na potrzeby rozwoju dodatku i tłumaczeń wykorzystywany jest część [szablonu
 ## Podziękowania
 
 Projekt YATTA nie powstałby, gdyby nie dodatki do NVDA, które pojawiły się wcześniej i zainspirowały różne aspekty jego działania. Należą do nich JGT (Japanese Games Translator), [Instant Translate](https://github.com/nvdaaddons/instantTranslate) oraz [NVDA Translate](https://github.com/yplassiard/nvda-translate).
+
+Mechanizm inteligentnego filtrowania mowy został zaadaptowany z dodatku [Polyglot](https://github.com/cary-rowen/polyglot) autorstwa cary-rowen.
 
 Chciałbym również podziękować moim testerom wersji pre-alpha – Oriolowi Gomezowi oraz Talonowi, którzy przekazali mi nieocenione uwagi i opinie.
 

@@ -30,6 +30,11 @@ from .services.deepl import DeepLTranslate
 from .services.ollama import OllamaTranslate
 from .services.openai import OpenAITranslate
 from .services.gemini import GeminiTranslate
+from .speech_filter import (
+    SmartSpeechFilter,
+    extract_translatable_text,
+    reconstruct_speech_sequence,
+)
 
 
 NUM_REGEX = re.compile(r'(-?\d+(?:[.,/]\d+)*)')
@@ -71,6 +76,7 @@ confspec = {
     "gemini_stream": "boolean(default=True)",
     "save_cache": "boolean(default=True)",
     "separate_numbers": "boolean(default=False)",
+    "filter_nvda_messages": "boolean(default=True)",
     "play_sound": "boolean(default=True)",
     "auto_swap": "boolean(default=False)"
 }
@@ -90,6 +96,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         self.speaking_translation = False
         self._original_speak = speechModule.speak
         speechModule.speak = self._hook_speak
+        self._smart_speech_filter = SmartSpeechFilter(speech, speechModule)
+        self._smart_speech_filter.register()
 
         self._translation_cancel_events = set()
         
@@ -127,6 +135,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             gui.settingsDialogs.NVDASettingsDialog.categoryClasses.remove(ui.YATTASettingsPanel)
         except Exception:
             pass
+        self._smart_speech_filter.unregister()
         speechModule.speak = self._original_speak
         
         try:
@@ -194,7 +203,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         else:
             return GoogleTranslate(conf.copy())
 
-    def translate_text(self, text, speak=True, browseable=False):
+    def translate_text(self, text, speak=True, browseable=False, on_complete=None):
         if not text or not text.strip():
             return False
             
@@ -476,9 +485,19 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                         full_translated_text.append(chunk_res)
                     is_first = False
 
-                if browseable and full_translated_text:
+                if full_translated_text:
                     combined_text = "".join(full_translated_text)
-                    queueHandler.queueFunction(queueHandler.eventQueue, nvda_ui.browseableMessage, combined_text, "YATTA Translation")
+                    if on_complete:
+                        queueHandler.queueFunction(
+                            queueHandler.eventQueue, on_complete, combined_text
+                        )
+                    if browseable:
+                        queueHandler.queueFunction(
+                            queueHandler.eventQueue,
+                            nvda_ui.browseableMessage,
+                            combined_text,
+                            "YATTA Translation",
+                        )
 
             except Exception as e:
                 if not request_cancel_event.is_set():
@@ -493,17 +512,35 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         return True
 
     def _hook_speak(self, speechSequence, *args, **kwargs):
-        if self.speaking_translation:
+        filter_enabled = config.conf["YATTA"].get("filter_nvda_messages", True)
+        if self.speaking_translation or (
+            filter_enabled and self._smart_speech_filter.is_suppressed
+        ):
             self._original_speak(speechSequence, *args, **kwargs)
             return
 
-        texts = [x for x in speechSequence if isinstance(x, str)]
-        if texts:
-            text = " ".join(texts)
+        text, translatable_indices = extract_translatable_text(
+            speechSequence, enabled=filter_enabled
+        )
+        if text:
             self.last_spoken_text = text
             app = self._get_app_name()
             if self._get_auto_translate_state(app):
-                if self.translate_text(text, speak=True):
+                original_sequence = list(speechSequence)
+
+                def speak_reconstructed(translation):
+                    reconstructed = reconstruct_speech_sequence(
+                        original_sequence, translatable_indices, translation
+                    )
+                    self.speaking_translation = True
+                    try:
+                        self._original_speak(reconstructed, *args, **kwargs)
+                    finally:
+                        self.speaking_translation = False
+
+                if self.translate_text(
+                    text, speak=False, on_complete=speak_reconstructed
+                ):
                     return
         self._original_speak(speechSequence, *args, **kwargs)
 

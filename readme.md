@@ -37,7 +37,7 @@ All of the commands available in the NVDA+Shift+T layer can also have dedicated 
 Press T to translate the last spoken phrase, S to translate the selected text in a document or web page, or C to translate the clipboard. Pressing any of the above commands with shift will cause the translation to be displayed in a virtual buffer instead of being spoken out-loud.
 
 
-Press A to toggle automatic translation. When this option is on, YATTA will automatically translate anything NVDA says. Note that this will introduce some latency between when you press a key and NVDA starting to speak, since YATTA has to wait for the translation to complete. Any spoken text is cached in memory, so if NVDA says the same text again reaction time should be much faster. This setting is saved only for the focused application. This means that if you need to do something in another program and switch away, translation will pause and resume automatically as soon as you come back.
+Press A to toggle automatic translation. When this option is on, YATTA will automatically translate user content in anything NVDA says. By default, NVDA-generated control and formatting information remains unchanged. Note that this will introduce some latency between when you press a key and NVDA starting to speak, since YATTA has to wait for the translation to complete. Any spoken text is cached in memory, so if NVDA says the same text again reaction time should be much faster. This setting is saved only for the focused application. This means that if you need to do something in another program and switch away, translation will pause and resume automatically as soon as you come back.
 
 
 Pressing W will swap the source and target languages. This command will only work if the source language is not set to auto-detect. If you have configured specific settings for the focused program (more on this later), the swap will be performed for that program, otherwise the global setting will be changed.
@@ -68,6 +68,8 @@ The global options for YATTA can be changed in NVDA’s settings dialog in the Y
 - Save cache to disk – when this is checked, the translation cache is saved to disk when NVDA exits. Turning this off will still keep translations in memory but not save them to disk. This setting can be overridden on a per-app basis, IE to save cache only in specific programs.
 
 - Separate numbers when translating – if this is checked, any text containing numbers is automatically saved in the cache as a regular expression with placeholders for each number.
+
+- Don’t translate NVDA messages, such as control information – when automatic translation is active, names and other user content are translated while NVDA-generated roles, states, position, and formatting information are kept unchanged. This is enabled by default.
 
 - Automatically Swap languages if text is already in Target language – this option is only available when a conventional service is being used and the source language is not auto-detect. If the translation service detects that the text is already in the target language, the translation is silently performed again with the languages swapped. Note that performing translations this way takes longer and requires accessing the service twice, so if you find you want to do a lot of swapped translations it’s better to do this manually by pressing W from the layer. The language detection may also be less accurate with shorter texts.
 
@@ -155,6 +157,8 @@ For development and translation, a subset of the [NVDA addon template](https://g
 ## Credits
 
 YATTA would not have been possible if not for the NVDA addons that came before and inspired various aspects of its design. These include JGT (aka the japanese games translator), [Instant Translate](https://github.com/nvdaaddons/instantTranslate) and [NVDA Translate](https://github.com/yplassiard/nvda-translate)
+
+The smart speech filtering approach is adapted from [Polyglot](https://github.com/cary-rowen/polyglot) by cary-rowen.
 
 I would also like to thank my testers - Oriol Gomez and Talon, who have both provided invaluable feedback during development of this add-on.
 
