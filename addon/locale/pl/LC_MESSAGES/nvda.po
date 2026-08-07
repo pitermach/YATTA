@@ -250,6 +250,10 @@ msgstr "Czy na pewno chcesz wyczyścić całą pamieć dla tej aplikacji?"
 msgid "Clear Cache"
 msgstr "Wyczyść Pamięć"
 
+#: addon\globalPlugins\YATA\__init__.py:262
+msgid "Loading model"
+msgstr "Ładowanie modelu"
+
 #: addon\globalPlugins\YATTA\__init__.py:404
 msgid "Warning, unused values: "
 msgstr "Uwaga, nieużyte wartości: "
@@ -378,8 +382,16 @@ msgstr ""
 #. Brief changelog for this version
 #. Translators: what's new content for the add-on version to be shown in the add-on store
 #: buildVars.py:29
-msgid "Initial Release"
-msgstr "Pierwsza wersja"
+msgid ""
+"Version 2.0:\n"
+"- Added the enabled-by-default \"Don't translate NVDA messages, such as control information\" setting.\n"
+"- Increased the Ollama request timeout to 20 seconds and added loading announcements for local models.\n"
+"- Fixed OpenAI translations failing when text contains characters outside Latin-1."
+msgstr ""
+"Wersja 2.0:\n"
+"- Dodano domyślnie włączone ustawienie „Nie tłumacz komunikatów NVDA, takich jak informacje o elementach sterujących”.\n"
+"- Zwiększono limit czasu żądań Ollama do 20 sekund oraz dodano komunikaty o ładowaniu modeli lokalnych.\n"
+"- Naprawiono błąd tłumaczeń OpenAI występujący, gdy tekst zawierał znaki spoza Latin-1."
 
 #~ msgid "Select Source Language..."
 #~ msgstr "Wybierz Język Źrudłowy..."
