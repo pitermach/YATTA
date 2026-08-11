@@ -4,7 +4,7 @@ import json
 import threading
 from . import TranslationEngine
 
-OLLAMA_REQUEST_TIMEOUT = 20
+OLLAMA_REQUEST_TIMEOUT = 30
 OLLAMA_STATUS_CHECK_DELAY = 1
 OLLAMA_STATUS_REQUEST_TIMEOUT = 2
 
