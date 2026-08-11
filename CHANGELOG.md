@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.1
+
+- Increased the Ollama request timeout to 30 seconds.
+
 ## 2.0
 
 - Added the enabled-by-default “Don’t translate NVDA messages, such as control information” setting. Automatic translation now preserves NVDA-generated control roles, states, position, and formatting information.

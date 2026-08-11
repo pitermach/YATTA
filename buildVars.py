@@ -23,10 +23,13 @@ addon_info = AddonInfo(
 	# Translators: Long description to be shown for this add-on on add-on information from add-on store
 	addon_description=_("""Translate text using both traditional translation services and LLM's, including ones running locally. The addon supports automatic translation, per-application settings and a dynamic cache system great for translating applications or games."""),
 	# version
-	addon_version="2.0",
+	addon_version="2.0.1",
 	# Brief changelog for this version
 	# Translators: what's new content for the add-on version to be shown in the add-on store
-	addon_changelog=_("""Version 2.0:
+	addon_changelog=_("""Version 2.0.1:
+- Increased the Ollama request timeout to 30 seconds.
+
+Version 2.0:
 - Added the enabled-by-default "Don't translate NVDA messages, such as control information" setting.
 - Increased the Ollama request timeout to 20 seconds and added loading announcements for local models.
 - Fixed OpenAI translations failing when text contains characters outside Latin-1."""),
