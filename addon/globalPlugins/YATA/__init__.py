@@ -24,6 +24,7 @@ import api
 import speech
 import queueHandler
 import logHandler
+import braille
 from . import ui
 from .services.google import GoogleTranslate
 from .services.bing import BingTranslate
@@ -566,28 +567,37 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                 self.toggling = False
                 self.clearGestureBindings()
                 self.bindGestures(self.__gestures)
-                tones.beep(120, 100)
+                self._report_invalid_layer_command()
             return dummy_script
         
         def wrapped_script(g):
             try:
                 script(g)
             finally:
-                if script.__name__ not in ("script_layerNext", "script_layerPrev"):
+                if script.__name__ not in (
+                    "script_layerNext",
+                    "script_layerPrev",
+                    "script_layerHelp",
+                ):
                     self.toggling = False
                     self.clearGestureBindings()
                     self.bindGestures(self.__gestures)
         return wrapped_script
+
+    def _report_invalid_layer_command(self):
+        tones.beep(120, 100)
+        braille.handler.message(_("Invalid command"))
         
     @scriptHandler.script(description=_("Translation Layer (Press S, T, C, or A)"))
     def script_layer(self, gesture):
         if self.toggling:
-            tones.beep(120, 100)
+            self._report_invalid_layer_command()
             return
         self.bindGestures(self.__layerGestures)
         self.toggling = True
         self._layer_index = -1
         tones.beep(200, 10)
+        braille.handler.message(_("YATTA, enter a command"))
         
     @scriptHandler.script(description=_("Translate selection"))
     def script_translateSelection(self, gesture):
@@ -747,6 +757,13 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
     def script_layerPrev(self, gesture):
         self._layer_index = (self._layer_index - 1) % len(self._layer_commands)
         self._announce_layer_command()
+
+    @scriptHandler.script()
+    def script_layerHelp(self, gesture):
+        nvda_ui.message(_(
+            "Press tab to go through all available commands. "
+            "Press Enter to activate the selected command."
+        ))
         
     def _announce_layer_command(self):
         cmd = self._layer_commands[self._layer_index]
@@ -771,6 +788,9 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         "kb:w": "swapLanguages",
         "kb:tab": "layerNext",
         "kb:shift+tab": "layerPrev",
+        "kb:h": "layerHelp",
+        "kb:shift+/": "layerHelp",
+        "kb:f1": "layerHelp",
         "kb:enter": "layerExecute"
     }
     

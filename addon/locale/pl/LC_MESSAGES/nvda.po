@@ -258,12 +258,20 @@ msgstr "Ładowanie modelu"
 msgid "Warning, unused values: "
 msgstr "Uwaga, nieużyte wartości: "
 
-#: addon\globalPlugins\YATTA\__init__.py:547
+#: addon\globalPlugins\YATA\__init__.py:588
+msgid "Invalid command"
+msgstr "Nieprawidłowe polecenie"
+
+#: addon\globalPlugins\YATA\__init__.py:590
 msgid "Translation Layer (Press S, T, C, or A)"
 msgstr "Aktywuj warstwę tłumacza"
 
-#: addon\globalPlugins\YATTA\__init__.py:557
-#: addon\globalPlugins\YATTA\__init__.py:693
+#: addon\globalPlugins\YATA\__init__.py:599
+msgid "YATTA, enter a command"
+msgstr "YATTA, wprowadź polecenie"
+
+#: addon\globalPlugins\YATA\__init__.py:601
+#: addon\globalPlugins\YATA\__init__.py:738
 msgid "Translate selection"
 msgstr "Przetłumacz zaznaczenie"
 
@@ -356,6 +364,14 @@ msgstr "Tłumaczenie z {src} na {tgt} w {app}"
 #, python-brace-format
 msgid "Translating from {src} to {tgt}"
 msgstr "Tłumaczenie z {src} na {tgt}"
+
+#: addon\globalPlugins\YATA\__init__.py:763
+msgid ""
+"Press tab to go through all available commands. Press Enter to activate the "
+"selected command."
+msgstr ""
+"Naciskaj klawisz Tab, aby przechodzić przez wszystkie dostępne polecenia. "
+"Naciśnij Enter, aby aktywować wybrane polecenie."
 
 #. Add-on summary/title, usually the user visible name of the add-on
 #. Translators: Summary/title for this add-on
