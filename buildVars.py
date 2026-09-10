@@ -23,10 +23,18 @@ addon_info = AddonInfo(
 	# Translators: Long description to be shown for this add-on on add-on information from add-on store
 	addon_description=_("""Translate text using both traditional translation services and LLM's, including ones running locally. The addon supports automatic translation, per-application settings and a dynamic cache system great for translating applications or games."""),
 	# version
-	addon_version="2.0.1",
+	addon_version="2.1",
 	# Brief changelog for this version
 	# Translators: what's new content for the add-on version to be shown in the add-on store
-	addon_changelog=_("""Version 2.0.1:
+	addon_changelog=_("""Version 2.1:
+- Move all YATTA settings into their own configuration file to prevent them from leaking into NVDA's log in certain situations
+- Hide API keys in YATTA settings
+- Add braille messages for entering and exiting the YATTA command layer
+- Add a layer help command telling users about the ability to tab through all available commands
+
+This version was made in large part thanks to suggestions made by @tspivey.
+
+Version 2.0.1:
 - Increased the Ollama request timeout to 30 seconds.
 
 Version 2.0:
@@ -44,7 +52,7 @@ Version 2.0:
 	# Minimum NVDA version supported (e.g. "2019.3.0", minor version is optional)
 	addon_minimumNVDAVersion="2025.3.3",
 	# Last NVDA version supported/tested (e.g. "2024.4.0", ideally more recent than minimum version)
-	addon_lastTestedNVDAVersion="2026.1",
+	addon_lastTestedNVDAVersion="2026.3",
 	# Add-on update channel (default is None, denoting stable releases,
 	# and for development releases, use "dev".)
 	# Do not change unless you know what you are doing!
