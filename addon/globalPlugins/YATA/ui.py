@@ -1,6 +1,5 @@
 import wx
 import gui
-import config
 import addonHandler
 from gui.settingsDialogs import SettingsPanel
 import addonHandler
@@ -15,6 +14,7 @@ import configobj
 import globalVars
 import tones
 from . import cache
+from . import settings
 from .services.google import GoogleTranslate
 from .services.bing import BingTranslate
 from .services.deepl import DeepLTranslate
@@ -157,7 +157,7 @@ class YATTAAppDialog(wx.Dialog):
         else:
             self.app_conf = configobj.ConfigObj()
             
-        self.global_conf = config.conf["YATTA"]
+        self.global_conf = settings.get_global_config()
         self.service = self.global_conf.get("service", "google")
         
         def get_val(key, global_fallback):
@@ -276,7 +276,7 @@ class YATTASettingsPanel(SettingsPanel):
         self.serviceList = ["google", "bing", "deepl", "ollama", "openai", "gemini"]
         self.serviceNames = ["Google Translate (Free)", "Bing Translate (Free)", "DeepL", "Ollama", "OpenAI", "Google Gemini"]
         
-        conf = config.conf["YATTA"]
+        conf = settings.get_global_config()
         
         # Service Selection
         self.serviceChoice = sHelper.addLabeledControl(_("Translation Service:"), wx.Choice, choices=self.serviceNames)
@@ -303,7 +303,7 @@ class YATTASettingsPanel(SettingsPanel):
         self.deeplPanel = wx.Panel(self)
         deeplSizer = wx.BoxSizer(wx.VERTICAL)
         deeplHelper = gui.guiHelper.BoxSizerHelper(self.deeplPanel, sizer=deeplSizer)
-        self.deeplKey = deeplHelper.addLabeledControl(_("DeepL API Key:"), wx.TextCtrl, value=conf.get("deepl_key", ""))
+        self.deeplKey = deeplHelper.addLabeledControl(_("DeepL API Key:"), wx.TextCtrl, style=wx.TE_PASSWORD, value=conf.get("deepl_key", ""))
         self.deeplPanel.SetSizer(deeplSizer)
         sHelper.addItem(self.deeplPanel)
         
@@ -312,7 +312,7 @@ class YATTASettingsPanel(SettingsPanel):
         llmSizer = wx.BoxSizer(wx.VERTICAL)
         llmHelper = gui.guiHelper.BoxSizerHelper(self.llmPanel, sizer=llmSizer)
         
-        self.llmKey = llmHelper.addLabeledControl(_("API Key:"), wx.TextCtrl, value="")
+        self.llmKey = llmHelper.addLabeledControl(_("API Key:"), wx.TextCtrl, style=wx.TE_PASSWORD, value="")
         self.llmAddress = llmHelper.addLabeledControl(_("Address / Base URL:"), wx.TextCtrl, value="")
         self.llmModel = llmHelper.addLabeledControl(_("Model:"), wx.TextCtrl, value="")
         self.btnSelectModel = wx.Button(self.llmPanel, label=_("Select Model..."))
@@ -363,7 +363,7 @@ class YATTASettingsPanel(SettingsPanel):
         
     def _saveLLMConfig(self, service):
         if service not in ("ollama", "openai", "gemini"): return
-        conf = config.conf["YATTA"]
+        conf = settings.get_global_config()
         if service != "ollama": conf[f"{service}_key"] = self.llmKey.GetValue()
         if service in ("ollama", "openai"): conf[f"{service}_address"] = self.llmAddress.GetValue()
         conf[f"{service}_model"] = self.llmModel.GetValue()
@@ -373,7 +373,7 @@ class YATTASettingsPanel(SettingsPanel):
 
     def _loadLLMConfig(self, service):
         if service not in ("ollama", "openai", "gemini"): return
-        conf = config.conf["YATTA"]
+        conf = settings.get_global_config()
         self.llmKey.SetValue(conf.get(f"{service}_key", ""))
         self.llmAddress.SetValue(conf.get(f"{service}_address", ""))
         self.llmModel.SetValue(conf.get(f"{service}_model", ""))
@@ -404,7 +404,7 @@ class YATTASettingsPanel(SettingsPanel):
         self.Layout()
 
     def onSave(self):
-        conf = config.conf["YATTA"]
+        conf = settings.get_global_config()
         conf["service"] = self.serviceList[self.serviceChoice.GetSelection()]
         conf["source_lang"] = self.sourceLangCode
         conf["target_lang"] = self.targetLangCode
@@ -415,10 +415,11 @@ class YATTASettingsPanel(SettingsPanel):
         conf["auto_swap"] = self.autoSwap.GetValue()
         conf["play_sound"] = self.playSound.GetValue()
         self._saveLLMConfig(self._current_service)
+        settings.save()
 
     def onSelectLanguage(self, is_source):
         sel = self.serviceList[self.serviceChoice.GetSelection()]
-        conf_copy = config.conf["YATTA"].copy()
+        conf_copy = settings.get_global_config().copy()
         conf_copy["deepl_key"] = self.deeplKey.GetValue()
         self._saveLLMConfig(self._current_service)
         current = self.sourceLangCode if is_source else self.targetLangCode
@@ -539,7 +540,7 @@ class CacheEditorDialog(wx.Dialog):
         self.app_name = app_name
         self.target_lang = target_lang
         
-        global_save = config.conf["YATTA"].get("save_cache", True)
+        global_save = settings.get_global_config().get("save_cache", True)
         app_save = global_save
         filepath = os.path.join(globalVars.appArgs.configPath, "YATTA", "settings", f"{app_name}.ini")
         if os.path.exists(filepath):

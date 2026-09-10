@@ -81,18 +81,17 @@ class UnusedTokenWarningTests(unittest.TestCase):
         completed = []
         fake_cache = FakeCache()
         engine = MissingTokenEngine()
-        config = types.SimpleNamespace(
-            conf={
-                "YATTA": {
-                    "service": "test",
-                    "source_lang": "ja",
-                    "target_lang": "en",
-                    "auto_swap": False,
-                    "separate_numbers": True,
-                    "test_stream": False,
-                    "play_sound": False,
-                }
-            }
+        global_config = {
+            "service": "test",
+            "source_lang": "ja",
+            "target_lang": "en",
+            "auto_swap": False,
+            "separate_numbers": True,
+            "test_stream": False,
+            "play_sound": False,
+        }
+        settings = types.SimpleNamespace(
+            get_global_config=lambda: global_config,
         )
         tones = types.SimpleNamespace(
             beep=lambda frequency, duration: beeps.append(
@@ -105,7 +104,7 @@ class UnusedTokenWarningTests(unittest.TestCase):
             "TOKEN_REGEX": re.compile(r"<token\d+>"),
             "SENTENCE_BREAKS_RE": re.compile(r"[.,!?;:\n]"),
             "cache": fake_cache,
-            "config": config,
+            "settings": settings,
             "nvda_ui": nvda_ui,
             "queueHandler": ImmediateQueueHandler,
             "re": re,

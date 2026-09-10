@@ -37,8 +37,8 @@ def init():
                     pass
 
 def save():
-    import config
-    global_save = config.conf["YATTA"].get("save_cache", True)
+    from . import settings
+    global_save = settings.get_global_config().get("save_cache", True)
     
     def should_save(app):
         import os, configobj, globalVars

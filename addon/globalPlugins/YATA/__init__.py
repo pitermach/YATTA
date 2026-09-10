@@ -15,6 +15,7 @@ import queue
 import configobj
 import globalVars
 from .ui import YATTAAppDialog, CacheEditorDialog
+from . import settings
 
 addonHandler.initTranslation()
 import globalPluginHandler
@@ -53,40 +54,17 @@ try:
 except Exception:
     _default_lang = 'en'
 
-confspec = {
-    "service": "string(default='google')",
-    "source_lang": "string(default='auto')",
-    "target_lang": f"string(default='{_default_lang}')",
-    "deepl_key": "string(default='')",
-    "ollama_address": "string(default='http://localhost:11434')",
-    "ollama_model": "string(default='translategemma:4b')",
-    "ollama_system_prompt": "string(default='')",
-    "ollama_user_prompt": "string(default='You are a professional {SOURCE_LANG} ({SOURCE_CODE}) to {TARGET_LANG} ({TARGET_CODE}) translator. Your goal is to accurately convey the meaning and nuances of the original {SOURCE_LANG} text while adhering to {TARGET_LANG} grammar, vocabulary, and cultural sensitivities.\nProduce only the {TARGET_LANG} translation, without any additional explanations or commentary. The text may contain placeholders like <token0>, it is essential they are reproduced exactly in the translation if they appear in the source text. Please translate the following {SOURCE_LANG} text into {TARGET_LANG}:\n\n{TEXT}')",
-    "ollama_stream": "boolean(default=True)",
-    "openai_key": "string(default='')",
-    "openai_address": "string(default='https://api.openai.com/v1')",
-    "openai_model": "string(default='gpt-5.4-mini')",
-    "openai_system_prompt": "string(default='You are an expert translator. Translate the given text to the target language.')",
-    "openai_user_prompt": "string(default='{TEXT}')",
-    "openai_stream": "boolean(default=True)",
-    "gemini_key": "string(default='')",
-    "gemini_model": "string(default='gemini-3.5-flash')",
-    "gemini_system_prompt": "string(default='You are an expert translator. Translate the given text to the target language.')",
-    "gemini_user_prompt": "string(default='{TEXT}')",
-    "gemini_stream": "boolean(default=True)",
-    "save_cache": "boolean(default=True)",
-    "separate_numbers": "boolean(default=False)",
-    "filter_nvda_messages": "boolean(default=True)",
-    "play_sound": "boolean(default=True)",
-    "auto_swap": "boolean(default=False)"
-}
-config.conf.spec["YATTA"] = confspec
-
 class GlobalPlugin(globalPluginHandler.GlobalPlugin):
     scriptCategory = "YATTA"
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        settings.initialize(
+            config.conf,
+            globalVars.appArgs.configPath,
+            _default_lang,
+            logHandler.log,
+        )
         self.toggling = False
         cache.init()
         self.auto_translate = False
@@ -166,7 +144,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         return default_val
 
     def _get_play_sound_state(self, app):
-        conf = config.conf["YATTA"]
+        conf = settings.get_global_config()
         if not app:
             return conf.get("play_sound", True)
         
@@ -187,7 +165,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
     def get_engine(self, conf_dict=None):
         if conf_dict is None:
-            conf_dict = config.conf["YATTA"].copy()
+            conf_dict = settings.get_global_config().copy()
         service = conf_dict["service"]
         conf = conf_dict
         if service == "bing":
@@ -218,7 +196,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
         app = self._get_app_name()
 
-        conf = config.conf["YATTA"]
+        conf = settings.get_global_config()
         target_lang = self._get_app_setting(app, "target_lang", conf["target_lang"])
         source_lang = self._get_app_setting(app, "source_lang", conf["source_lang"])
         auto_swap = str(self._get_app_setting(app, "auto_swap", conf.get("auto_swap", False))).lower() == 'true'
@@ -532,7 +510,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         return True
 
     def _hook_speak(self, speechSequence, *args, **kwargs):
-        filter_enabled = config.conf["YATTA"].get("filter_nvda_messages", True)
+        filter_enabled = settings.get_global_config().get("filter_nvda_messages", True)
         if self.speaking_translation or (
             filter_enabled and self._smart_speech_filter.is_suppressed
         ):
@@ -698,7 +676,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
     def script_cacheEditor(self, gesture):
         app = self._get_app_name()
         
-        conf = config.conf["YATTA"]
+        conf = settings.get_global_config()
         target_lang = self._get_app_setting(app, "target_lang", conf["target_lang"])
 
         def show_dialog():
@@ -714,7 +692,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
     def script_swapLanguages(self, gesture):
         app = self._get_app_name()
         
-        conf = config.conf["YATTA"]
+        conf = settings.get_global_config()
         target_lang = self._get_app_setting(app, "target_lang", conf["target_lang"])
         source_lang = self._get_app_setting(app, "source_lang", conf["source_lang"])
         
@@ -744,6 +722,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         # Fallback to global config
         conf["source_lang"] = new_source
         conf["target_lang"] = new_target
+        settings.save()
         nvda_ui.message(_("Translating from {src} to {tgt}").format(src=new_source, tgt=new_target))
 
     _layer_commands = [
