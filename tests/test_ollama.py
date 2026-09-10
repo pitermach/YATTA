@@ -70,7 +70,7 @@ class OllamaTranslateTests(unittest.TestCase):
         config.update(overrides)
         return ollama_service.OllamaTranslate(config)
 
-    def test_non_streaming_request_uses_twenty_second_timeout(self):
+    def test_non_streaming_request_uses_thirty_second_timeout(self):
         response = FakeResponse(
             body=json.dumps({"response": "translated"}).encode("utf-8")
         )
@@ -81,9 +81,9 @@ class OllamaTranslateTests(unittest.TestCase):
             result = self.make_engine().translate("text", stream=False)
 
         self.assertEqual("translated", result)
-        self.assertEqual(20, urlopen.call_args.kwargs["timeout"])
+        self.assertEqual(30, urlopen.call_args.kwargs["timeout"])
 
-    def test_streaming_request_uses_twenty_second_timeout(self):
+    def test_streaming_request_uses_thirty_second_timeout(self):
         response = FakeResponse(
             lines=(
                 b'{"response":"translated","done":false}\n',
@@ -97,7 +97,7 @@ class OllamaTranslateTests(unittest.TestCase):
             chunks = list(self.make_engine().translate("text", stream=True))
 
         self.assertEqual(["translated"], chunks)
-        self.assertEqual(20, urlopen.call_args.kwargs["timeout"])
+        self.assertEqual(30, urlopen.call_args.kwargs["timeout"])
 
     def test_slow_unloaded_model_announces_loading(self):
         generate_response = FakeResponse(
